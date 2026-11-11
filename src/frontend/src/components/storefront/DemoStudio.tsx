@@ -1,31 +1,32 @@
 import { useEffect, useRef, useState } from 'react';
 import './demo-studio.css';
 
-const newSessionId = () => crypto.randomUUID?.() ?? `rehearsal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+export const newSessionId = () => crypto.randomUUID?.() ?? `rehearsal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-type ScenarioId = 'product' | 'own_order' | 'out_of_scope' | 'unauthorized';
-type Policy = 'baseline' | 'guarded';
-type Mode = 'replay' | 'live';
+export type ScenarioId = 'product' | 'own_order' | 'out_of_scope' | 'unauthorized';
+export type Policy = 'baseline' | 'guarded';
+export type Mode = 'replay' | 'live';
 type Order = { id: string; customer_id: string; customer: string; product: string; address: string; status: string };
 type Scenario = { id: ScenarioId; title: string; risk: string; prompt: string };
 type DatadogStatus = { enabled: boolean; configured: boolean; ml_app: string; site: string; application_url: string; trace_batches_accepted: number; trace_batches_failed: number; evaluation_batches_accepted: number; evaluation_batches_failed: number };
-type Config = { customer: { id: string; name: string; label: string }; orders: Order[]; scenarios: Scenario[]; live_enabled: boolean; live_configured: boolean; trace_export_enabled: boolean; datadog?: DatadogStatus; fixture_notice: string };
+export type Config = { customer: { id: string; name: string; label: string }; orders: Order[]; scenarios: Scenario[]; live_enabled: boolean; live_configured: boolean; trace_export_enabled: boolean; datadog?: DatadogStatus; fixture_notice: string };
 type Check = { name: string; risk: string; passed: boolean | null; detail: string };
 type Step = { name: string; kind: string; status: string; duration_ms: number; input: unknown; output: unknown; span_id: string };
-type Result = { trace_id: string; scenario: ScenarioId; mode: Mode; policy: Policy; answer: string; passed: boolean; duration_ms: number; model_calls: number; input_tokens: number | null; output_tokens: number | null; model: string | null; cost_usd: number | null; orders_before: Order[]; orders_after: Order[]; checks: Check[]; steps: Step[]; evaluation_kind: string; datadog_evaluation_delivery: string };
+export type Result = { trace_id: string; scenario: ScenarioId; mode: Mode; policy: Policy; answer: string; passed: boolean; duration_ms: number; model_calls: number; input_tokens: number | null; output_tokens: number | null; model: string | null; cost_usd: number | null; orders_before: Order[]; orders_after: Order[]; checks: Check[]; steps: Step[]; evaluation_kind: string; datadog_evaluation_delivery: string };
 
-export default function DemoStudio({ onClose }: { onClose: () => void }) {
- const sessionId = useRef(newSessionId());
+export default function DemoStudio({ onClose, initialRuns = [], onRun, onReset, conversationId }: { onClose: () => void; initialRuns?: Result[]; onRun?: (result: Result) => void; onReset?: () => string; conversationId?: string }) {
+ const sessionId = useRef(conversationId ?? newSessionId());
+ const latest = initialRuns.at(-1);
  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
  const dialog = useRef<HTMLDialogElement>(null);
  const [config, setConfig] = useState<Config | null>(null);
- const [scenario, setScenario] = useState<ScenarioId>('product');
- const [policy, setPolicy] = useState<Policy>('guarded');
- const [mode, setMode] = useState<Mode>('replay');
+ const [scenario, setScenario] = useState<ScenarioId>(latest?.scenario ?? 'product');
+ const [policy, setPolicy] = useState<Policy>(latest?.policy ?? 'guarded');
+ const [mode, setMode] = useState<Mode>(latest?.mode ?? 'replay');
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
- const [runs, setRuns] = useState<Result[]>([]);
- const [selected, setSelected] = useState<Result | null>(null);
+ const [runs, setRuns] = useState<Result[]>(initialRuns);
+ const [selected, setSelected] = useState<Result | null>(latest ?? null);
  const [tab, setTab] = useState<'trace' | 'evaluate' | 'monitor' | 'test'>('trace');
  useEffect(() => { const el = dialog.current; el?.showModal(); const controller = new AbortController(); fetch('/api/demo/config', { signal: controller.signal }).then(async response => { if (!response.ok) throw new Error('Could not load the presentation sandbox.'); setConfig(await response.json()); }).catch(e => { if (e.name !== 'AbortError') setError(e.message); }); return () => { controller.abort(); if (refreshTimer.current) clearTimeout(refreshTimer.current); el?.close(); }; }, []);
  async function refreshDelivery() {
@@ -37,7 +38,7 @@ export default function DemoStudio({ onClose }: { onClose: () => void }) {
    const body = await response.json();
    if (!response.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'The demo request failed.');
    const result = body as Result;
-   setRuns(previous => [...previous, result]); setSelected(result);
+   setRuns(previous => [...previous, result]); setSelected(result); onRun?.(result);
    return result;
  }
  async function run(kind: 'single' | 'script' | 'compare') {
@@ -55,7 +56,7 @@ export default function DemoStudio({ onClose }: { onClose: () => void }) {
  const failCount = activeChecks.filter(c => c.passed === false).length;
  const totalCalls = runs.reduce((total, run) => total + run.model_calls, 0);
  return <dialog ref={dialog} className="demo-studio" onCancel={event => { event.preventDefault(); if (!busy) onClose(); }} aria-label="Ignite presentation demo studio">
-   <div className="studio-header"><div><span className="studio-event">MICROSOFT IGNITE 2026</span><h1>Trace. Evaluate. Ship.</h1><p>A good response isn’t always a good outcome.</p></div><div className="studio-top-account"><span>DEMO CUSTOMER CONTEXT</span><strong>Alex Morgan</strong><small>customer-alex · synthetic</small></div><button className="studio-exit" onClick={onClose} disabled={busy}>← Back to storefront</button></div>
+   <div className="studio-header"><div><span className="studio-event">MICROSOFT IGNITE 2026</span><h1>Trace. Evaluate. Ship.</h1><p>Alex asked. The assistant acted. Was the outcome right?</p></div><div className="studio-top-account"><span>DEMO CUSTOMER CONTEXT</span><strong>Alex Morgan</strong><small>customer-alex · synthetic</small></div><button className="studio-exit" onClick={onClose} disabled={busy}>← Back to storefront</button></div>
    <div className="studio-disclosure"><span className="studio-status-dot"/>{mode === 'replay' ? 'SCRIPTED LOCAL REPLAY' : 'LIVE FOUNDRY MODEL'}<span>All orders and customers are synthetic. Tools never touch real orders.</span></div>
    <div className="studio-layout"><aside className="studio-controls">
      <div className="studio-section-title">01 / SET THE SCENE</div>
@@ -68,7 +69,7 @@ export default function DemoStudio({ onClose }: { onClose: () => void }) {
      <blockquote className="prompt-preview">“{prompt?.prompt ?? 'Loading scenarios…'}”</blockquote>
      <div className="studio-actions"><button aria-label={busy ? "Running scenario" : "Run scenario"} className="studio-primary" disabled={busy || !config} onClick={() => void run('single')}>{busy ? 'Running…' : 'Run scenario'} <span>→</span></button>
      <div className="studio-secondary-actions"><button disabled={busy || !config} onClick={() => void run('script')}>Run all 4 requests</button><button disabled={busy || !config} onClick={() => void run('compare')}>Compare policies</button></div>
-     <button className="studio-reset" disabled={busy} onClick={() => { sessionId.current = newSessionId(); setRuns([]); setSelected(null); setError(''); }}>↺ Reset rehearsal</button>
+     <button className="studio-reset" disabled={busy} onClick={() => { sessionId.current = onReset?.() ?? newSessionId(); setRuns([]); setSelected(null); setError(''); }}>↺ Reset rehearsal</button>
      <p className="studio-hint">Each request starts from the same fixture. Live requests use your deployed model and may incur inference costs. Replay answers are scripted.</p></div>
    </aside><section className="studio-stage" aria-label="Conversation and synthetic orders">
      <div className="studio-section-title">03 / OBSERVE THE OUTCOME</div>

@@ -11,7 +11,7 @@ python -m uvicorn "api.main:create_app" --factory --reload
 
 Open <http://127.0.0.1:8000>. Azure credentials are optional: storefront mode starts with `ENABLE_AI_AGENT=false` (the default). See the [local development guide](docs/local_development.md) for setup, product data, and the optional legacy agent integration.
 
-For the Ignite presentation, open **Open demo studio** to run synthetic customer/order scenarios in local replay or live Foundry mode, compare broad versus owner-checked tools, and inspect the Trace/Evaluate/Monitor/Test loop. See the [presentation runbook](docs/local_development.md#ignite-2026-presentation-studio).
+For the Ignite presentation, use **Try the shopping assistant** (or Alex’s account button) inside Fieldwork for guided product and order requests. **Demo settings** lets you replay the broad-access failure or use ownership checks, in replay or configured live Foundry mode. **Inspect this run in demo studio** carries the same conversation, trace IDs, and results into the reliability loop. You can also open **Open demo studio** to run synthetic customer/order scenarios in local replay or live Foundry mode, compare broad versus owner-checked tools, and inspect the Trace/Evaluate/Monitor/Test loop. See the [presentation runbook](docs/local_development.md#ignite-2026-presentation-studio).
 
 Datadog Agent Observability captures replay and live agent/tool traces, prompt versions, token usage, and custom outcome checks. Follow the [Datadog setup guide](docs/local_development.md#datadog-agent-observability); Azure Marketplace integration still requires application instrumentation.
 

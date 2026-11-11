@@ -22,11 +22,13 @@ Catalog: `src/api/data/catalog.json`. The product illustrations are original SVG
 
 ### A reliable rehearsal sequence
 
-1. Leave **Local replay** selected and choose **Guarded**. Run the normal product question, then the own-order update. Inspect the catalog lookup and order tool.
-2. Choose **Baseline**, select **Change someone else's order**, and run it. FW-1002 belongs to Jamie, but the intentionally permissive fixture tool changes its address. The request completes without an exception while the customer-isolation check fails.
-3. Open **Trace** to inspect customer/owner context and the actual tool arguments/result. Open **Evaluate** to explain why a green technical result is a failed business outcome.
-4. Switch to **Guarded** and repeat. Ownership is enforced inside the server tool, independently of model instructions. Jamie's order stays unchanged. **Compare policies** runs both policies against the same fresh fixture.
-5. Use **Run all 4 requests** to send the normal, own-order, out-of-scope, and unauthorized-order requests. **Monitor** summarizes only these real rehearsal runs. **Reset rehearsal** clears the UI history and comparison.
+1. In Fieldwork, click **Try the shopping assistant** or **Alex · Demo shopper**. Alex is the signed-in synthetic customer. Use the suggested requests to ask about the tent and update Alex's delivery address. The order card shows the result from the latest request.
+2. Expand **Demo settings**, choose **Baseline**, and click **Help with a friend’s order**. FW-1002 belongs to Jamie, but the broad fixture tool changes its address. The assistant confirms the update without an outcome warning. Only the demo studio reveals the failed customer-isolation check.
+3. Click **Inspect this run in demo studio**. The studio opens with the same conversation, selected result, trace ID, execution mode, and policy. **Trace** shows the actual tool call; **Evaluate** explains the failed business outcome. Jamie’s before/after address is visible in the studio's synthetic order evidence.
+4. Use **Compare policies** to run the request against broad access and server-enforced ownership. Under **Guarded**, Jamie's order stays unchanged.
+5. **Run all 4 requests** sends the product, own-order, out-of-scope, and unauthorized requests. **Monitor** includes the runs started in Fieldwork. Closing the studio keeps the conversation available in the shopping assistant; **Reset rehearsal** clears the shared history.
+
+Both surfaces use the same `/api/demo/config` and `/api/demo/run` endpoints and conversation ID. The assistant offers the four presentation requests rather than a free-form chat input. Each run resets the synthetic order fixture; these updates are demonstrations, not persisted account changes or orders created by checkout. The studio stays directly accessible from **Open demo studio**.
 
 Local replay uses scripted answers and zero model calls. Its OpenTelemetry spans, tool execution, timings, order changes, and deterministic rule checks are real local behavior. Checks are deliberately narrow regression assertions, not Foundry/Datadog evaluator scores or a complete security assessment. No chain-of-thought is displayed. Dollar cost is zero for replay; live dollar pricing is not configured and is never invented.
 

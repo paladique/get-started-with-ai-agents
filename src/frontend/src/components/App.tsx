@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import catalog from '../../../api/data/catalog.json';
 import { Landscape, ProductArt } from './storefront/ProductArt';
 import './storefront/storefront.css';
-import DemoStudio from './storefront/DemoStudio';
+import DemoStudio, { newSessionId, type Result } from './storefront/DemoStudio';
+import FieldworkAssistant from './storefront/FieldworkAssistant';
 
 type Product = typeof catalog[number];
 type Cart = Record<number, number>;
@@ -27,6 +28,10 @@ function Modal({ children, onClose, label, drawer = false }: { children: ReactNo
 }
 export default function App() {
   const [studioOpen, setStudioOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantRuns, setAssistantRuns] = useState<Result[]>([]);
+  const [conversationId, setConversationId] = useState(newSessionId);
+  const recordRun = (result: Result) => setAssistantRuns(previous => [...previous, result]);
   const [category, setCategory] = useState('All gear');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('featured');
@@ -66,7 +71,7 @@ export default function App() {
   return <>
     <div className="announcement">A little less indoors. A little more adventure. <span>Find your next outside <span aria-hidden="true">↗</span></span></div>
     <div className="presentation-banner"><div><strong>IGNITE 2026</strong><span>Trace every step. Evaluate every outcome.</span></div><button onClick={() => setStudioOpen(true)}>Open demo studio ↗</button></div>
-    <header className="site-header"><a className="wordmark" href="#" aria-label="Fieldwork home"><span className="brand-mark"><Icon name="mountain" size={28}/></span>fieldwork<span className="wordmark-dot">.</span></a><nav aria-label="Main navigation"><a href="#shop" className="nav-active" onClick={() => setCategory('All gear')}>Shop all</a><a href="#shop" onClick={() => browse('Tents')}>Camp</a><a href="#shop" onClick={() => browse('Backpacks')}>Hike</a><a href="#our-story">Our story</a></nav><div className="header-account"><button className="demo-shopper" onClick={() => setStudioOpen(true)}><span>AM</span>Alex · Demo shopper</button><button className="bag-button" onClick={openBag}><Icon name="bag"/><span>Bag</span><span className="bag-count">{count}</span></button></div></header>
+    <header className="site-header"><a className="wordmark" href="#" aria-label="Fieldwork home"><span className="brand-mark"><Icon name="mountain" size={28}/></span>fieldwork<span className="wordmark-dot">.</span></a><nav aria-label="Main navigation"><a href="#shop" className="nav-active" onClick={() => setCategory('All gear')}>Shop all</a><a href="#shop" onClick={() => browse('Tents')}>Camp</a><a href="#shop" onClick={() => browse('Backpacks')}>Hike</a><a href="#our-story">Our story</a></nav><div className="header-account"><button className="demo-shopper" onClick={() => setAssistantOpen(true)}><span>AM</span>Alex · Demo shopper</button><button className="bag-button" onClick={openBag}><Icon name="bag"/><span>Bag</span><span className="bag-count">{count}</span></button></div></header>
     <main>
       <section className="hero" aria-labelledby="hero-heading"><div className="hero-copy"><span className="eyebrow"><span className="little-line"/> FOR THE WAY OUT THERE</span><h1 id="hero-heading">Good gear.<br/>Great <em>outdoors.</em></h1><p>From the first mile to the last campfire.<br/>Find a little something for your next adventure.</p><a className="primary-button" href="#shop">Explore the collection <Icon name="arrow"/></a><div className="hero-footnote"><span className="tiny-mountain">△</span> Made for moments beyond the everyday.</div></div><div className="hero-art"><Landscape/><div className="scene-caption"><span>TAKE THE SCENIC ROUTE</span><span>01 / THE GREAT OUTSIDE</span></div></div></section>
       <div className="collection-strip"><span><Icon name="mountain"/> Gear for every kind of outside</span><span>20 products. Countless possibilities.</span><a href="#shop">Find your essentials <Icon name="arrow" size={16}/></a></div>
@@ -83,8 +88,9 @@ export default function App() {
       <section id="our-story" className="story"><div className="story-symbol"><Icon name="mountain" size={74}/></div><div><span className="eyebrow">LESS SCROLLING. MORE EXPLORING.</span><h2>The best plans<br/>start with getting outside.</h2><p>A collection of practical companions for camp, trail, and everything in between. From familiar outdoor essentials to a few clever comforts, find the gear that fits your kind of adventure.</p><a href="#shop" className="text-link">Make your next plan <Icon name="arrow" size={18}/></a></div><span className="story-stamp">TAKE<br/>THE LONG<br/>WAY HOME <span>↗</span></span></section>
     </main>
     <footer><a className="wordmark" href="#">fieldwork<span className="wordmark-dot">.</span></a><p>A little gear. A lot of possibility.</p><span>Demo storefront · No real purchases</span><a href="#shop">Back to the collection ↑</a></footer>
-    <button className="assistant-launcher" onClick={() => setStudioOpen(true)}><span>f.</span>Try the shopping assistant<span>↗</span></button>
-    {studioOpen && <DemoStudio onClose={() => setStudioOpen(false)}/>}
+    <button className="assistant-launcher" onClick={() => setAssistantOpen(true)}><span>f.</span>Try the shopping assistant<span>↗</span></button>
+    <FieldworkAssistant open={assistantOpen && !studioOpen} onClose={() => setAssistantOpen(false)} runs={assistantRuns} onRun={recordRun} conversationId={conversationId} onInspect={() => { setAssistantOpen(false); setStudioOpen(true); }}/>
+    {studioOpen && <DemoStudio initialRuns={assistantRuns} onRun={recordRun} conversationId={conversationId} onReset={() => { const id = newSessionId(); setAssistantRuns([]); setConversationId(id); return id; }} onClose={() => setStudioOpen(false)}/>}
     {notice && <div className="toast" role="status"><Icon name="check" size={18}/>{notice}</div>}
     {selected && <Modal label={selected.name} onClose={() => setSelected(null)}><div className="product-detail"><div className={`detail-art tone-${selected.id % 4}`}><ProductArt kind={selected.kind} id={selected.id}/><span>Product illustration</span></div><div className="detail-copy"><span className="eyebrow">{selected.brand} / {selected.category}</span><h2>{selected.name}</h2><span className="detail-price">{selected.price === null ? 'Price on request' : money(selected.price)}</span><p>{selected.price === null ? 'This product is part of the collection, but its source document does not list a price. It cannot be added to the demo bag.' : 'A closer look at what makes this piece a companion for your next adventure.'}</p><h3>The details</h3><ul>{selected.features.map(feature => <li key={feature}>{feature}</li>)}</ul>{selected.price !== null && <button className="primary-button" onClick={() => add(selected)}>Add to bag <Icon name="plus"/></button>}{notice && <p role="status" className="detail-status">{notice}</p>}<span className="source-note">From the original product catalog · Item {selected.id}</span></div></div></Modal>}
     {cartOpen && <Modal label={complete ? 'Demo order complete' : checkout ? 'Review demo order' : 'Your shopping bag'} drawer onClose={() => setCartOpen(false)}><div className="cart-content"><span className="eyebrow">YOUR NEXT ADVENTURE</span><h2>{complete ? 'Happy trails.' : checkout ? 'One last look.' : 'In the bag.'}<span>{!complete && ` (${count})`}</span></h2>
