@@ -85,7 +85,7 @@ If you're not using one of the above options for opening the project, then you'l
 1. Make sure the following tools are installed:
 
    - [Azure Developer CLI (azd)](https://aka.ms/install-azd) Install or update to the latest version. Instructions can be found on the linked page.
-   - [Python 3.9+](https://www.python.org/downloads/)
+   - [Python 3.10+](https://www.python.org/downloads/)
    - [Git](https://git-scm.com/downloads)
    - \[Windows Only\] [PowerShell](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows) of the latest version, needed only for local application development on Windows operation system. Please make sure that path to power shell executable `pwsh.exe` is added to the `PATH` variable.
 
@@ -331,3 +331,39 @@ There are several ways to deploy the solution. You can deploy to run in Azure in
 
 When Deployment is complete, follow steps in [Set Up Authentication in Azure App Service](azure_app_service_auth_setup.md) to add app authentication with AAD to your web app running on Azure App Service.  Alternatively, run `./scripts/setup_credential.ps1` or `./scripts/setup_credential.sh` to setup basic auth with username and password.
 
+
+
+## Provisioning conflicts and container startup
+
+The Foundry account's model deployments, project, and connections are created in sequence. This prevents the sibling-resource writes that caused `RequestConflict: Another operation is in progress` on the account during the first `azd up`. Model deployments are also serialized with `batchSize(1)`. A conflict caused by a separate concurrent deployment can still occur; avoid running multiple provisioning commands against the same account simultaneously.
+
+Container ingress, probes, the placeholder image, and the deployed application use internal port 80. The image sets `PORT=80`; local Gunicorn without that variable still uses 50505, Uvicorn uses 8000, and Docker Compose maps local 50505 to container 80. The container waits for the ACR pull-role assignment, and TCP startup probes allow up to ten minutes for initialization. Gunicorn defaults to one async worker for the 0.5 CPU / 1 GiB container; `WEB_CONCURRENCY` can override this when resources are increased.
+
+At startup, transient Azure authorization, conflict, throttling, and transport errors are retried up to 30 attempts, ten seconds apart. Each attempt looks up the existing agent before creating one. Permanent configuration errors fail immediately. New managed-identity role grants may still need time to propagate beyond this retry window; inspect container logs if startup remains unhealthy.
+
+The parameter file now uses `AZURE_AI_AGENT_DEPLOYMENT_NAME` for the deployment name independently of `AZURE_AI_AGENT_MODEL_NAME`. This matters when using an existing project whose deployment has a custom name. Log Analytics remains enabled for Container Apps when Application Insights is disabled; no empty App Insights connection is created.
+
+After updating the files, select your existing azd environment and run:
+
+```sh
+azd env select ignite26-demo
+azd up
+```
+
+The root `.env` is for local application runs. Configure provisioning with `azd env set`, which writes to the selected `.azure/<environment>/.env`.
+
+If deployment succeeds but the page does not open, inspect the active revision and console logs (replace the resource group and app name with your environment's values):
+
+```sh
+az containerapp revision list --resource-group <resource-group> --name <container-app> --output table
+az containerapp logs show --resource-group <resource-group> --name <container-app> --type console --follow
+```
+
+Offline regression checks:
+
+```sh
+bicep build infra/main.bicep
+python -m pytest tests/test_infra_config.py tests/test_startup_retry.py tests/test_local_config.py -q
+```
+
+`infra/main.json` is generated from the Bicep source; regenerate it when changing infrastructure.

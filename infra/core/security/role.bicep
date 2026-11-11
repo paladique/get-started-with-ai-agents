@@ -17,7 +17,7 @@ resource role 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   properties: {
     principalId: principalId
     principalType: principalType
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', roleDefinitionId)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitionId)
   }
   dependsOn: [
     resourceGroup() // Explicitly declare dependency on the resource group

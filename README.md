@@ -1,3 +1,24 @@
+# Fieldwork storefront
+
+This repository now opens as a basic storefront using the existing 20 product documents. Browse categories, search and sort products, view details, and build a saved local cart with a demo order review. Payments and shipping are not connected.
+
+```sh
+source .venv/bin/activate
+pnpm --dir src/frontend build
+cd src
+python -m uvicorn "api.main:create_app" --factory --reload
+```
+
+Open <http://127.0.0.1:8000>. Azure credentials are optional: storefront mode starts with `ENABLE_AI_AGENT=false` (the default). See the [local development guide](docs/local_development.md) for setup, product data, and the optional legacy agent integration.
+
+For the Ignite presentation, open **Open demo studio** to run synthetic customer/order scenarios in local replay or live Foundry mode, compare broad versus owner-checked tools, and inspect the Trace/Evaluate/Monitor/Test loop. See the [presentation runbook](docs/local_development.md#ignite-2026-presentation-studio).
+
+Datadog Agent Observability captures replay and live agent/tool traces, prompt versions, token usage, and custom outcome checks. Follow the [Datadog setup guide](docs/local_development.md#datadog-agent-observability); Azure Marketplace integration still requires application instrumentation.
+
+---
+
+The original Azure agent template documentation follows for reference.
+
 # Getting Started with Agents Using Microsoft Foundry
 
 The agent leverages Foundry Agent Service and utilizes file search for knowledge retrieval from uploaded files, enabling it to generate responses with citations. The solution also includes built-in monitoring capabilities with tracing to ensure easier troubleshooting and optimized performance.

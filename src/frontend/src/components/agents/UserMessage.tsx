@@ -15,7 +15,7 @@ const EditIcon = bundleIcon(EditFilled, EditRegular);
 export function UserMessage({
   message,
   onEditMessage,
-}: IUserMessageProps): JSX.Element {
+}: IUserMessageProps): React.JSX.Element {
   const formatTimestamp = useFormatTimestamp();
 
   return (

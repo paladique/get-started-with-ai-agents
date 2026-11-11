@@ -62,8 +62,6 @@ param ingressEnabled bool = true
 
 param revisionMode string = 'Single'
 
-param dependOn string = ''
-
 @description('The secrets required for the container')
 @secure()
 param secrets object = {}
@@ -103,7 +101,7 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
   // otherwise the container app will throw a provision error
   // This also forces us to use an user assigned managed identity since there would no way to 
   // provide the system assigned identity with the ACR pull access before the app is created
-  dependsOn: empty(dependOn)? [] : [dependOn]
+  dependsOn: [containerRegistryAccess]
   identity: {
     type: normalizedIdentityType
     userAssignedIdentities: !empty(identityName) && normalizedIdentityType == 'UserAssigned' ? { '${userIdentity.id}': {} } : null
@@ -145,6 +143,24 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
           image: !empty(imageName) ? imageName : 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           name: containerName
           env: env
+          // Agent initialization can upload files and wait for new RBAC grants.
+          // TCP also works for the initial hello-world placeholder image.
+          probes: ingressEnabled ? [
+            {
+              type: 'Startup'
+              tcpSocket: { port: targetPort }
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 120
+            }
+            {
+              type: 'Readiness'
+              tcpSocket: { port: targetPort }
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 6
+            }
+          ] : []
           resources: {
             cpu: json(containerCpuCoreCount)
             memory: containerMemory

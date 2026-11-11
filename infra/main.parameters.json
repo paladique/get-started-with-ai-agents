@@ -10,7 +10,7 @@
     },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
-    },    
+    },
     "principalTypeOverride": {
       "value": "${PRINCIPAL_TYPE_OVERRIDE=User}"
     },
@@ -19,9 +19,6 @@
     },
     "resourceGroupName": {
       "value": "${AZURE_RESOURCE_GROUP}"
-    },
-    "aiHubName": {
-      "value": "${AZURE_AIHUB_NAME}"
     },
     "aiProjectName": {
       "value": "${AZURE_AIPROJECT_NAME}"
@@ -44,9 +41,6 @@
     "containerRegistryName": {
       "value": "${AZURE_CONTAINER_REGISTRY_NAME}"
     },
-    "keyVaultName": {
-      "value": "${AZURE_KEYVAULT_NAME}"
-    },
     "storageAccountName": {
       "value": "${AZURE_STORAGE_ACCOUNT_NAME}"
     },
@@ -55,9 +49,6 @@
     },
     "logAnalyticsWorkspaceName": {
       "value": "${AZURE_LOG_ANALYTICS_WORKSPACE_NAME}"
-    },
-    "useContainerRegistry": {
-      "value": "${USE_CONTAINER_REGISTRY=true}"
     },
     "useApplicationInsights": {
       "value": "${USE_APPLICATION_INSIGHTS=true}"
@@ -78,7 +69,7 @@
       "value": "${AZURE_EXISTING_AGENT_ID}"
     },
     "agentDeploymentName": {
-      "value": "${AZURE_AI_AGENT_MODEL_NAME=gpt-5-mini}"
+      "value": "${AZURE_AI_AGENT_DEPLOYMENT_NAME=gpt-5-mini}"
     },
     "agentModelFormat": {
       "value": "${AZURE_AI_AGENT_MODEL_FORMAT=OpenAI}"
@@ -115,9 +106,6 @@
     },
     "embeddingDeploymentDimensions": {
       "value": "${AZURE_AI_EMBED_DIMENSIONS=1536}"
-    },
-    "apiAppExists": {
-      "value": "${SERVICE_API_RESOURCE_EXISTS=false}"
     },
     "azureExistingAIProjectResourceId": {
       "value": "${AZURE_EXISTING_AIPROJECT_RESOURCE_ID}"

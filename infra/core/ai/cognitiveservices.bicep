@@ -50,6 +50,8 @@ resource account 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
 
 resource aiServiceConnection 'Microsoft.CognitiveServices/accounts/connections@2025-04-01-preview' = {
   name: aoaiConnectionName
+  // Serialize account child writes; the provider rejects concurrent operations.
+  dependsOn: [aiProject]
   parent: account
   properties: {
     category: 'AzureOpenAI'
@@ -65,8 +67,9 @@ resource aiServiceConnection 'Microsoft.CognitiveServices/accounts/connections@2
 
 
 // Creates the Azure Foundry connection to your Azure App Insights resource
-resource appInsightConnection 'Microsoft.CognitiveServices/accounts/connections@2025-04-01-preview' = {
+resource appInsightConnection 'Microsoft.CognitiveServices/accounts/connections@2025-04-01-preview' = if (!empty(appInsightsId)) {
   name: appInsightConnectionName
+  dependsOn: [aiServiceConnection]
   parent: account
   properties: {
     category: 'AppInsights'
@@ -86,6 +89,7 @@ resource appInsightConnection 'Microsoft.CognitiveServices/accounts/connections@
 // Creates the Azure Foundry connection to your Azure Storage resource
 resource storageAccountConnection 'Microsoft.CognitiveServices/accounts/connections@2025-04-01-preview' = if (useStorageAccount) {
   name: storageAccountConnectionName
+  dependsOn: [appInsightConnection, aiServiceConnection]
   parent: account
   properties: {
     category: 'AzureStorageAccount'
@@ -102,6 +106,8 @@ resource storageAccountConnection 'Microsoft.CognitiveServices/accounts/connecti
 resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-04-01-preview' = {
   parent: account
   name: aiProjectName
+  // batchSize serializes models only; the project must also wait for ALL models.
+  dependsOn: [aiServicesDeployments]
   location: location
   tags: tags  
   identity: {

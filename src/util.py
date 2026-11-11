@@ -9,50 +9,30 @@ from urllib.parse import quote
 
 
 def get_env_file_path():
+    """Resolve local config: root .env, then the default azd environment.
+
+    Production uses process environment variables and dotenv's default lookup.
+    Explicit process variables always take precedence (load_dotenv's default).
     """
-    Get the path to the environment file to load.
-    
-    For local development (RUNNING_IN_PRODUCTION not set):
-      - Reads .azure/config.json to get defaultEnvironment
-      - Returns path to .azure/{defaultEnvironment}/.env
-    
-    For production (RUNNING_IN_PRODUCTION set):
-      - Returns None (will use default .env location)
-    
-    Returns:
-        str: Absolute path to the environment file, or None to use default location.
-    """
-    # In production, use default location
     if os.getenv("RUNNING_IN_PRODUCTION"):
         return None
-    
-    # For local development, try to get path from .azure/{environment}/.env
+
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    local_env = os.path.join(root, ".env")
+    if os.path.isfile(local_env):
+        return local_env
+
     try:
-        # Read the default environment from .azure/config.json
-        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.azure', 'config.json'))
-        
-        if not os.path.exists(config_path):
-            return None
-            
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            default_env = config.get('defaultEnvironment')
-            
-            if not default_env:
-                return None
-                
-            env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.azure', default_env, '.env'))
-            
-            if not os.path.exists(env_file):
-                return None
-                
-            # Successfully found the azd environment file
-            return env_file
-        
-    except Exception as e:
-        # On any error, return None to use default
-        return None
-    
+        with open(os.path.join(root, ".azure", "config.json")) as config_file:
+            default_env = json.load(config_file).get("defaultEnvironment")
+        if default_env:
+            azd_env = os.path.join(root, ".azure", default_env, ".env")
+            if os.path.isfile(azd_env):
+                return azd_env
+    except (OSError, ValueError, TypeError):
+        pass
+    return None
+
 
 # Constants
 DEFAULT_NS_TYPE = "Microsoft.CognitiveServices"
@@ -257,3 +237,34 @@ def encode_project_resource_id(project_resource_id: str) -> str:
         encoded_resource_id_segments.append(quote(project_name))
     
     return DELIM.join(encoded_resource_id_segments)
+
+
+async def retry_azure_startup(operation, logger, attempts=30, delay=10):
+    """Bound startup retries for fresh managed-identity grants and transient failures.
+
+    Permanent configuration errors fail immediately. The caller must look up an
+    existing agent before creating one on each attempt.
+    """
+    import asyncio
+    from azure.core.exceptions import HttpResponseError, ServiceRequestError, ServiceResponseError
+
+    for attempt in range(1, attempts + 1):
+        try:
+            return await operation()
+        except (HttpResponseError, ServiceRequestError, ServiceResponseError) as error:
+            transient = isinstance(error, (ServiceRequestError, ServiceResponseError)) or (
+                error.status_code in (401, 403, 408, 409, 429, 500, 502, 503, 504)
+            )
+            if not transient or attempt == attempts:
+                raise
+            logger.warning("Azure startup not ready; retrying in %ss (attempt %s/%s).",
+                           delay, attempt, attempts)
+            await asyncio.sleep(delay)
+
+
+def save_local_agent_id(env_file, agent_id):
+    """Persist a directly initialized agent for a subsequent local Uvicorn run."""
+    if os.getenv("RUNNING_IN_PRODUCTION") or not env_file:
+        return
+    from dotenv import set_key
+    set_key(env_file, "AZURE_EXISTING_AGENT_ID", agent_id)

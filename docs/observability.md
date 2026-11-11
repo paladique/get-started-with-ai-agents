@@ -1,3 +1,9 @@
+# Datadog for the Fieldwork presentation
+
+For the storefront Demo Studio, follow [Datadog Agent Observability setup](local_development.md#datadog-agent-observability). It covers direct Datadog US3 trace export, prompt tracking, custom outcome evaluations, delivery verification, and how this differs from the Azure Marketplace integration.
+
+The Microsoft Foundry evaluation and monitoring guide below applies to the optional legacy agent integration.
+
 # Observability features
 
 Observability is a key aspect of building and maintaining high-quality AI applications. It encompasses monitoring, tracing, and evaluating the performance and behavior of AI systems to ensure they meet desired standards and provide a safe and reliable user experience. 

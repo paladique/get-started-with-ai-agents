@@ -52,7 +52,7 @@ _ASSET_STAMP_FILE = os.path.join(
 
 def _get_asset_version() -> str:
     try:
-        return str(int(os.path.getmtime(_ASSET_STAMP_FILE)))
+        return str(os.stat(_ASSET_STAMP_FILE).st_mtime_ns)
     except OSError:
         return "0"
 
@@ -102,10 +102,16 @@ def cleanup_created_at_metadata(metadata: Mapping[str, str]) -> None:
         del metadata[min_key]
 
 def get_project_client(request: Request) -> AIProjectClient:
-    return request.app.state.ai_project
+    client = getattr(request.app.state, "ai_project", None)
+    if client is None:
+        raise HTTPException(status_code=503, detail="Azure agent integration is disabled. Set ENABLE_AI_AGENT=true to enable it.")
+    return client
 
 def get_agent_version_details(request: Request) -> AgentVersionDetails:
-    return request.app.state.agent_version_details
+    agent = getattr(request.app.state, "agent_version_details", None)
+    if agent is None:
+        raise HTTPException(status_code=503, detail="Azure agent integration is disabled. Set ENABLE_AI_AGENT=true to enable it.")
+    return agent
 
 def get_openai_client(request: Request) -> AsyncOpenAI:
     return get_project_client(request).get_openai_client()
@@ -183,6 +189,7 @@ async def index(request: Request, _ = auth_dependency):
         request,
         "index.html",
         {"asset_version": _get_asset_version()},
+        headers={"Cache-Control": "no-store"},
     )
 
 async def save_user_message_created_at(openai_client: AsyncOpenAI, conversation: Conversation,  input_created_at: float):
@@ -364,3 +371,11 @@ async def chat(
     response.set_cookie("conversation_id", conversation_id)
     response.set_cookie("agent_id", agent_id)
     return response
+
+
+@router.get("/api/products")
+async def list_products(_ = auth_dependency):
+    """The original product catalog, shared with the storefront build."""
+    from pathlib import Path
+    catalog_path = Path(__file__).parent / "data" / "catalog.json"
+    return JSONResponse(content=json.loads(catalog_path.read_text()))

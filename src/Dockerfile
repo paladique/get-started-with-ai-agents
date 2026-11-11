@@ -12,7 +12,7 @@ RUN apt-get update \
 COPY . .
 
 # Upgrade pip to fix security vulnerability GHSA-4xh5-x5gv-qwph
-RUN pip install --no-cache-dir --upgrade pip>=25.3
+RUN pip install --no-cache-dir --upgrade "pip>=25.3"
 
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
@@ -21,14 +21,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
-    && npm install -g pnpm@10.6.0 \
+    && npm install -g pnpm@12.18.0 \
     && node --version \
     && pnpm --version \
     && rm -rf /var/lib/apt/lists/*
 
 # Build React frontend
 WORKDIR /code/frontend
-RUN pnpm install --frozen-lockfile=false \
+RUN pnpm install --frozen-lockfile \
     && pnpm build \
     && rm -rf node_modules \
     && rm -rf /root/.local/share/pnpm \
@@ -42,6 +42,7 @@ RUN apt-get purge -y krb5-user libkrb5-3 libkrb5support0 libgssapi-krb5-2 curl \
 # Return to backend directory
 WORKDIR /code
 
-EXPOSE 50505
+ENV PORT=80
+EXPOSE 80
 
 CMD ["gunicorn", "api.main:create_app"]

@@ -3,7 +3,7 @@ import { FluentProvider } from "@fluentui/react-components";
 import { ThemeContext } from "./ThemeContext";
 import { useThemeProvider } from "./useThemeProvider";
 
-export function ThemeProvider({ children }: PropsWithChildren): JSX.Element {
+export function ThemeProvider({ children }: PropsWithChildren): React.JSX.Element {
   const themeContext = useThemeProvider();
 
   return (

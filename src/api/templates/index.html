@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <title>Get Started with AI Agents</title>
+    <meta name="description" content="Outdoor gear for camp, trail, and everything in between.">
+    <meta name="theme-color" content="#263f33">
+    <title>Fieldwork — Good gear. Great outdoors.</title>
     <link href="/static/react/assets/main-react-app.css?v={{ asset_version }}" rel="stylesheet" type="text/css">
 </head>
 <body style="margin: 0;">
-    <div id="react-root"></div>
+    <div id="react-root"><main id="startup-status" role="status" style="max-width:520px;margin:15vh auto;padding:24px;font:16px/1.6 Arial,sans-serif;color:#263f33"><h1 style="font-size:28px;letter-spacing:-1px">Fieldwork.</h1><p id="startup-message">Loading the storefront…</p><button id="startup-reload" hidden style="padding:12px 20px;background:#263f33;color:white;border:0;border-radius:4px;cursor:pointer">Reload storefront</button><noscript><p>Enable JavaScript in your browser to browse the storefront.</p></noscript></main></div>
     <!-- Load React app with fixed filename -->
-    <script type="module" src="/static/react/assets/main-react-app.js?v={{ asset_version }}"></script>
+    <script src="/static/react/storefront-startup.js?v={{ asset_version }}" defer></script>
+    <script data-storefront-app type="module" src="/static/react/assets/main-react-app.js?v={{ asset_version }}"></script>
 </body>
 </html>

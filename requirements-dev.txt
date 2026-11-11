@@ -1,4 +1,5 @@
 -r src/requirements.txt
 pytest
+httpx # FastAPI TestClient for offline tests
 ruff
 pre-commit

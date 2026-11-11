@@ -32,6 +32,8 @@ param location string
 param azureExistingAIProjectResourceId string = ''
 @description('The Azure resource group where new resources will be deployed')
 param resourceGroupName string = ''
+@description('Optional custom Container Registry name')
+param containerRegistryName string = ''
 @description('The Microsoft Foundry Hub resource name. If ommited will be generated')
 param aiProjectName string = ''
 @description('The application insights resource name. If ommited will be generated')
@@ -77,7 +79,7 @@ param agentDeploymentName string = 'gpt-5-mini'
 @description('Version of the chat model to deploy')
 // See version availability in this table:
 // https://learn.microsoft.com/azure/ai-services/openai/concepts/models#global-standard-model-availability
-param agentModelVersion string = '2024-07-18'
+param agentModelVersion string = '2025-08-07'
 
 @description('Sku of the chat deployment')
 param agentDeploymentSku string = 'GlobalStandard'
@@ -145,6 +147,9 @@ var resourceTokenStable = toLower(uniqueString(subscription().id, environmentNam
 
 var tags = { 'azd-env-name': environmentName }
 
+// azd may pass an empty override, which must not erase the signed-in principal.
+var resolvedPrincipalId = !empty(principalIdOverride) ? principalIdOverride : principalId
+
 var tempAgentID = !empty(aiAgentID) ? aiAgentID : ''
 var agentID = !empty(azureExistingAgentId) ? azureExistingAgentId : tempAgentID
 
@@ -189,11 +194,9 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   tags: tags
 }
 
-var logAnalyticsWorkspaceResolvedName = !useApplicationInsights
-  ? ''
-  : !empty(logAnalyticsWorkspaceName)
-      ? logAnalyticsWorkspaceName
-      : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+var logAnalyticsWorkspaceResolvedName = !empty(logAnalyticsWorkspaceName)
+  ? logAnalyticsWorkspaceName
+  : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
 
 var resolvedSearchServiceName = !useSearchService || !useStorageAccount
   ? ''
@@ -306,7 +309,7 @@ module containerApps 'core/host/container-apps.bicep' = {
   params: {
     name: 'app'
     location: location
-    containerRegistryName: '${abbrs.containerRegistryRegistries}${resourceToken}'
+    containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     tags: tags
     containerAppsEnvironmentName: 'containerapps-env-${resourceToken}'
     logAnalyticsWorkspaceName: empty(azureExistingAIProjectResourceId) || alwaysReprovision
@@ -353,7 +356,7 @@ module userRoleAzureAIDeveloper 'core/security/role.bicep' = {
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '64702f94-c441-49e6-a78b-ef80e0188fee'
   }
 }
@@ -363,7 +366,7 @@ module userCognitiveServicesUser  'core/security/role.bicep' = if (empty(azureEx
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
   }
 }
@@ -373,7 +376,7 @@ module userAzureAIUser  'core/security/role.bicep' = if (empty(azureExistingAIPr
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '53ca6127-db72-4b80-b1b0-d745d6d5456d'
   }
 }
@@ -464,7 +467,7 @@ module userRoleSearchIndexDataContributorRG 'core/security/role.bicep' = if (use
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '8ebe5a00-799e-43f5-93ac-243d3dce84a7'
   }
 }
@@ -474,7 +477,7 @@ module userRoleSearchIndexDataReaderRG 'core/security/role.bicep' = if (useSearc
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '1407120a-92aa-4202-b7e9-c0e197c71c8f'
   }
 }
@@ -484,7 +487,7 @@ module userRoleSearchServiceContributorRG 'core/security/role.bicep' = if (useSe
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '7ca78c08-252a-4471-8644-bb5ff32d4ba0'
   }
 }
@@ -494,7 +497,7 @@ module userRoleStorageAccountContributorRG 'core/security/role.bicep' = if (useS
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
   }
 }
@@ -504,7 +507,7 @@ module userRoleStorageBlobDataContributorRG 'core/security/role.bicep' = if (use
   scope: rg
   params: {
     principalType: principalTypeOverride
-    principalId: principalIdOverride
+    principalId: resolvedPrincipalId
     roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
   }
 }

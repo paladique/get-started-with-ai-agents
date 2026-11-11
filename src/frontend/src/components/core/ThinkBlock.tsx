@@ -19,7 +19,7 @@ const hasEndThink = (
     return children.some(child => hasEndThink(child as React.ReactNode));
   }
 
-  if (isValidElement(children) && children.props?.children != null) {
+  if (isValidElement<{ children?: React.ReactNode }>(children) && children.props?.children != null) {
     return hasEndThink(children.props.children as React.ReactNode);
   }
 
@@ -35,7 +35,7 @@ const removeEndThink = (children: React.ReactNode): React.ReactNode => {
     return children.map(child => removeEndThink(child as React.ReactNode));
   }
 
-  if (isValidElement(children) && children.props?.children != null) {
+  if (isValidElement<{ children?: React.ReactNode }>(children) && children.props?.children != null) {
     return cloneElement(children, {
       ...children.props,
       children: removeEndThink(children.props.children),
@@ -49,7 +49,7 @@ const useThinkTimer = (children: React.ReactNode) => {
   const startTime = useRef(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | number>();
+  const timerRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     timerRef.current = window.setInterval(() => {
@@ -59,14 +59,14 @@ const useThinkTimer = (children: React.ReactNode) => {
     }, 100);
 
     return () => {
-      window.clearInterval(timerRef.current as NodeJS.Timeout);
+      window.clearInterval(timerRef.current);
     };
   }, [isComplete]);
 
   useEffect(() => {
     if (hasEndThink(children)) {
       setIsComplete(true);
-      window.clearInterval(timerRef.current as NodeJS.Timeout);
+      window.clearInterval(timerRef.current);
     }
   }, [children]);
 

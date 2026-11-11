@@ -4,13 +4,13 @@
 from typing import Dict, List, Optional
 
 import asyncio
-import multiprocessing
 import os
 import tempfile
 
 from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import DefaultAzureCredential
 from azure.core.credentials_async import AsyncTokenCredential
+from azure.core.exceptions import ResourceNotFoundError
 from azure.ai.projects.models import PromptAgentDefinition
 from azure.ai.projects.models import FileSearchTool, AzureAISearchTool, Tool, AzureAISearchToolResource, AISearchIndexResource, AgentVersionDetails, ConnectionType
 
@@ -27,7 +27,7 @@ from azure.ai.projects.models import (
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from logging_config import configure_logging
-from util import get_env_file_path
+from util import get_env_file_path, retry_azure_startup, save_local_agent_id
 
 # Load environment variables from azd environment folder for local development
 env_file = get_env_file_path()
@@ -447,7 +447,7 @@ async def initialize_eval(project_client: AIProjectClient, agent_version_details
     except Exception as e:
         logger.error(f"Error creating Continuous Evaluation Rule: {e}", exc_info=True)
 
-async def initialize_resources():
+async def _initialize_resources():
     proj_endpoint = os.environ.get("AZURE_EXISTING_AIPROJECT_ENDPOINT")
     try:
         async with (
@@ -465,7 +465,7 @@ async def initialize_resources():
                     agent_version = agentID.split(":")[1]
                     agent_version_details = await project_client.agents.get_version(agent_name, agent_version)
                     logger.info(f"Found agent by ID: {agent_version_details.id}")
-                except Exception as e:
+                except ResourceNotFoundError as e:
                     logger.warning(
                         "Could not retrieve agent by AZURE_EXISTING_AGENT_ID = "
                         f"{agentID}, error: {e}")
@@ -480,7 +480,7 @@ async def initialize_resources():
                     agents = await project_client.agents.get(agent_name)
                     agent_version_details = agents.versions.latest
                     logger.info(f"Agent with agent id, {agent_version_details.id} retrieved.")
-                except Exception as e:
+                except ResourceNotFoundError:
                     logger.info(f"Agent name, {agent_name} not found.")
                     
             # Create a new agent
@@ -492,19 +492,26 @@ async def initialize_resources():
 
             await initialize_eval(project_client, agent_version_details)
     except Exception as e:
-        logger.info("Error creating agent: {e}", exc_info=True)
-        raise RuntimeError(f"Failed to create the agent: {e}")  
+        logger.error("Error creating agent: %s", e, exc_info=True)
+        raise
+
+
+async def initialize_resources():
+    await retry_azure_startup(_initialize_resources, logger)
 
 
 def on_starting(server):
     """This code runs once before the workers will start."""
-    asyncio.get_event_loop().run_until_complete(initialize_resources())
+    if os.getenv("ENABLE_AI_AGENT", "false").lower() == "true":
+        asyncio.run(initialize_resources())
+    else:
+        logger.info("Starting storefront without Azure agent initialization.")
 
 
 max_requests = 1000
 max_requests_jitter = 50
 log_file = "-"
-bind = "0.0.0.0:50505"
+bind = f"0.0.0.0:{os.getenv('PORT', '50505')}"
 
 if not os.getenv("RUNNING_IN_PRODUCTION"):
     reload = True
@@ -514,13 +521,14 @@ if not os.getenv("RUNNING_IN_PRODUCTION"):
 # Please see the documentation on gunicorn
 # https://docs.gunicorn.org/en/stable/settings.html
 preload_app = True
-num_cpus = multiprocessing.cpu_count()
-workers = (num_cpus * 2) + 1
-worker_class = "uvicorn.workers.UvicornWorker"
+# This app uses async I/O; host CPU count can greatly exceed the container quota.
+workers = max(1, int(os.getenv("WEB_CONCURRENCY", "1")))
+worker_class = "uvicorn_worker.UvicornWorker"
 
 timeout = 120
 
 if __name__ == "__main__":
     logger.info("Running initialize_resources directly...")
     asyncio.run(initialize_resources())
-    logger.info("initialize_resources finished.")
+    save_local_agent_id(env_file, os.environ["AZURE_EXISTING_AGENT_ID"])
+    logger.info("initialize_resources finished; local agent configuration saved when an env file is available.")

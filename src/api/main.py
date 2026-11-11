@@ -4,6 +4,7 @@
 import contextlib
 import os
 
+from azure.core.exceptions import ClientAuthenticationError, ResourceNotFoundError
 from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import DefaultAzureCredential
 from azure.ai.projects.telemetry import AIProjectInstrumentor
@@ -21,10 +22,27 @@ enable_trace = False
 logger = None
 
 @contextlib.asynccontextmanager
-async def lifespan(app: fastapi.FastAPI):
+async def _application_lifespan(app: fastapi.FastAPI):
+    # Catalog browsing is independent of the optional legacy Azure agent APIs.
+    if os.getenv("ENABLE_AI_AGENT", "false").lower() != "true":
+        app.state.ai_project = None
+        app.state.agent_version_details = None
+        logger.info("Storefront ready; Azure agent integration is disabled.")
+        yield
+        return
     agent_version_details = None
     proj_endpoint = os.environ.get("AZURE_EXISTING_AIPROJECT_ENDPOINT")
     agent_id = os.environ.get("AZURE_EXISTING_AGENT_ID")    
+    missing = [name for name in (
+        "AZURE_EXISTING_AIPROJECT_ENDPOINT",
+        "AZURE_EXISTING_AGENT_ID",
+        "AZURE_AI_AGENT_DEPLOYMENT_NAME",
+    ) if not os.getenv(name, "").strip()]
+    if missing:
+        raise RuntimeError(
+            "Missing required configuration: " + ", ".join(missing)
+            + ". Fill in the repository .env (see .env.example)."
+        )
     try:
 
         async with (
@@ -61,11 +79,21 @@ async def lifespan(app: fastapi.FastAPI):
                     agent_version = agent_id.split(":")[1]
                     agent_version_details = await project_client.agents.get_version(agent_name, agent_version)
                     logger.info(f"Fetched agent, agent ID: {agent_version_details.id}")
-                except Exception as e:
-                    logger.error(f"Error fetching agent: {e}", exc_info=True)
+                except ClientAuthenticationError as error:
+                    raise RuntimeError(
+                        "Azure authentication failed. For local development, install Azure CLI "
+                        "and run 'az login --use-device-code' in this environment, or configure "
+                        "AZURE_TENANT_ID, AZURE_CLIENT_ID, and AZURE_CLIENT_SECRET."
+                    ) from error
+                except ResourceNotFoundError as error:
+                    raise RuntimeError(
+                        "Agent version was not found in the configured project. Check "
+                        "AZURE_EXISTING_AIPROJECT_ENDPOINT and AZURE_EXISTING_AGENT_ID "
+                        "(agent_name:agent_version)."
+                    ) from error
 
             if not agent_version_details:
-                message = "Fail to fetch agent. Ensure qunicorn.py created one or set AZURE_EXISTING_AGENT_ID."
+                message = "No agent version was returned. Check AZURE_EXISTING_AGENT_ID or initialize an agent with gunicorn.conf.py."
                 if env_file:
                     message += f" (Environment from {env_file})"
                 raise RuntimeError(message)
@@ -76,20 +104,30 @@ async def lifespan(app: fastapi.FastAPI):
 
     except Exception as e:
         logger.error(f"Error during startup: {e}", exc_info=True)
-        raise RuntimeError(f"Error during startup: {e}")
+        raise RuntimeError(f"Error during startup: {e}") from e
 
     finally:
         logger.info("Closed AIProjectClient")
 
 
+@contextlib.asynccontextmanager
+async def lifespan(app: fastapi.FastAPI):
+    try:
+        async with _application_lifespan(app):
+            yield
+    finally:
+        # Deliver buffered observability spans on Uvicorn reload and Gunicorn shutdown.
+        from .presentation import shutdown_tracing
+        shutdown_tracing()
+
+
 def create_app():
     
     global logger, env_file
-    logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
-
     # Load environment variables from azd environment folder for local development
     env_file = get_env_file_path()
     load_dotenv(env_file)
+    logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
 
     if env_file:
         logger.info(f"Loaded environment variables from {env_file}")
@@ -105,7 +143,7 @@ def create_app():
     else:
         enable_trace = str(enable_trace_string).lower() == "true"
     if enable_trace:
-        logger.info("Tracing is enabled.")
+        logger.info("Azure Monitor tracing is enabled.")
         try:
             from azure.monitor.opentelemetry import configure_azure_monitor
         except ModuleNotFoundError:
@@ -113,7 +151,7 @@ def create_app():
             logger.error("Please make sure azure-monitor-opentelemetry is installed.")
             exit()
     else:
-        logger.info("Tracing is not enabled")
+        logger.info("Azure Monitor tracing is not enabled")
 
     directory = os.path.join(os.path.dirname(__file__), "static")
     app = fastapi.FastAPI(lifespan=lifespan)
@@ -126,6 +164,10 @@ def create_app():
 
     from . import routes  # Import routes
     app.include_router(routes.router)
+    from .presentation import router as presentation_router
+    from fastapi import Depends
+    dependencies = [Depends(routes.authenticate)] if routes.basic_auth else []
+    app.include_router(presentation_router, dependencies=dependencies)
 
     # Global exception handler for any unhandled exceptions
     @app.exception_handler(Exception)

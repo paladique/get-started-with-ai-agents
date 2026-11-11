@@ -1,0 +1,379 @@
+[
+  {
+    "id": 1,
+    "name": "SmartView Glasses",
+    "price": null,
+    "brand": "Contoso Galaxy Innovations",
+    "category": "Smart Eyewear",
+    "group": "Everyday",
+    "kind": "glasses",
+    "features": [
+      "Augmented Reality interface",
+      "Voice-controlled AI assistant",
+      "HD video recording with 3D audio",
+      "UV protection and blue light filtering",
+      "Wireless charging with extended battery life"
+    ],
+    "description": "Augmented Reality interface",
+    "source": "product_info_1.md"
+  },
+  {
+    "id": 2,
+    "name": "Self-Warming Blanket",
+    "price": null,
+    "brand": "Contoso Quantum Comfort",
+    "category": "Self-Warming Blanket",
+    "group": "Sleep & comfort",
+    "kind": "blanket",
+    "features": [
+      "Nano-fiber heating elements for even warmth distribution",
+      "Intelligent temperature control with machine learning preferences",
+      "Eco-friendly and energy-efficient design",
+      "Wireless and portable with up to 12 hours of battery life",
+      "Waterproof and machine washable material"
+    ],
+    "description": "Nano-fiber heating elements for even warmth distribution",
+    "source": "product_info_2.md"
+  },
+  {
+    "id": 3,
+    "name": "Summit Breeze Jacket",
+    "price": 120.0,
+    "brand": "MountainStyle",
+    "category": "Hiking Clothing",
+    "group": "Clothing",
+    "kind": "jacket",
+    "features": [
+      "Lightweight design for easy carrying",
+      "Windproof construction for protection against strong winds",
+      "Water-resistant material to keep you dry in light rain",
+      "Breathable fabric for enhanced comfort during activities",
+      "Adjustable cuffs for a customized fit and added protection",
+      "Available in sizes M, L, and XL"
+    ],
+    "description": "Lightweight design for easy carrying",
+    "source": "product_info_3.md"
+  },
+  {
+    "id": 4,
+    "name": "TrekReady Hiking Boots",
+    "price": 140.0,
+    "brand": "TrekReady",
+    "category": "Hiking Footwear",
+    "group": "Footwear",
+    "kind": "boots",
+    "features": [
+      "Durable construction for long-lasting performance",
+      "Comfortable fit for extended hiking trips",
+      "Excellent traction on various terrains",
+      "Waterproof design to keep your feet dry",
+      "Ankle support for stability and protection",
+      "Breathable materials for enhanced comfort"
+    ],
+    "description": "Durable construction for long-lasting performance",
+    "source": "product_info_4.md"
+  },
+  {
+    "id": 5,
+    "name": "BaseCamp Folding Table",
+    "price": 60.0,
+    "brand": "CampBuddy",
+    "category": "Camping Tables",
+    "group": "Camp furniture",
+    "kind": "table",
+    "features": [
+      "Lightweight and durable aluminum construction",
+      "Foldable design with a compact size for easy storage and transport",
+      "Adjustable legs for different height settings and uneven terrain",
+      "Large tabletop dimensions of 48in x 24in, providing ample space for meals, games, and other activities",
+      "Sturdy and stable structure capable of supporting various items",
+      "Quick and easy setup without the need for additional tools"
+    ],
+    "description": "Lightweight and durable aluminum construction",
+    "source": "product_info_5.md"
+  },
+  {
+    "id": 6,
+    "name": "EcoFire Camping Stove",
+    "price": 80.0,
+    "brand": "EcoFire",
+    "category": "Camping Stoves",
+    "group": "Camp kitchen",
+    "kind": "stove",
+    "features": [
+      "Fuel-efficient: Designed to maximize fuel usage and minimize waste",
+      "Compact: Portable and space-saving design, ideal for camping and outdoor adventures",
+      "Durable: Constructed with high-quality stainless steel for long-lasting durability",
+      "Easy to use: Simple and intuitive operation for hassle-free cooking",
+      "Wind protection: Provides effective wind resistance to maintain steady heat output",
+      "Lightweight: Weighs only 4 lbs, making it easy to carry and transport"
+    ],
+    "description": "Fuel-efficient: Designed to maximize fuel usage and minimize waste",
+    "source": "product_info_6.md"
+  },
+  {
+    "id": 7,
+    "name": "CozyNights Sleeping Bag",
+    "price": 100.0,
+    "brand": "CozyNights",
+    "category": "Sleeping Bags",
+    "group": "Sleep & comfort",
+    "kind": "sleeping",
+    "features": [
+      "Lightweight: Designed to be lightweight for easy carrying during outdoor adventures.",
+      "3-Season: Suitable for use in spring, summer, and fall seasons.",
+      "Compact Design: Folds down to a compact size for convenient storage and transport.",
+      "Included Stuff Sack: Comes with a stuff sack for easy packing and carrying.",
+      "Insulation: Provides warmth and comfort during sleep.",
+      "Zipper Closure: Features a durable zipper closure for easy access and temperature control."
+    ],
+    "description": "Lightweight: Designed to be lightweight for easy carrying during outdoor adventures.",
+    "source": "product_info_7.md"
+  },
+  {
+    "id": 8,
+    "name": "Alpine Explorer Tent",
+    "price": 350.0,
+    "brand": "AlpineGear",
+    "category": "Tents",
+    "group": "Tents",
+    "kind": "tent",
+    "features": [
+      "Waterproof: Provides reliable protection against rain and moisture.",
+      "Easy Setup: Simple and quick assembly process, making it convenient for camping.",
+      "Room Divider: Includes a detachable divider to create separate living spaces within the tent.",
+      "Excellent Ventilation: Multiple mesh windows and vents promote airflow and reduce condensation.",
+      "Gear Loft: Built-in gear loft or storage pockets for organizing and storing camping gear."
+    ],
+    "description": "Waterproof: Provides reliable protection against rain and moisture.",
+    "source": "product_info_8.md"
+  },
+  {
+    "id": 9,
+    "name": "SummitClimber Backpack",
+    "price": 120.0,
+    "brand": "HikeMate",
+    "category": "Backpacks",
+    "group": "Backpacks",
+    "kind": "pack",
+    "features": [
+      "Capacity: 60 liters",
+      "Material: Nylon",
+      "Color: Grey",
+      "Dimensions: 28 inches x 16 inches x 10 inches (Length x Width x Depth)",
+      "Weight: 3 lbs",
+      "Ergonomic design for comfortable carrying during hikes and outdoor adventures."
+    ],
+    "description": "Capacity: 60 liters",
+    "source": "product_info_9.md"
+  },
+  {
+    "id": 10,
+    "name": "TrailBlaze Hiking Pants",
+    "price": 75.0,
+    "brand": "MountainStyle",
+    "category": "Hiking Clothing",
+    "group": "Clothing",
+    "kind": "pants",
+    "features": [
+      "Material: Made of high-quality nylon fabric",
+      "Color: Khaki",
+      "Size Options: Available in M, L, and XL sizes",
+      "Weight: Lightweight design, weighing approximately 1lb",
+      "Quick-Drying: Designed to dry quickly, allowing for enhanced comfort during outdoor activities",
+      "Water-Resistant: Provides protection against light rain or splashes"
+    ],
+    "description": "Material: Made of high-quality nylon fabric",
+    "source": "product_info_10.pdf"
+  },
+  {
+    "id": 11,
+    "name": "TrailWalker Hiking Shoes",
+    "price": 110.0,
+    "brand": "TrekReady",
+    "category": "Hiking Footwear",
+    "group": "Footwear",
+    "kind": "boots",
+    "features": [
+      "Durable and waterproof construction to withstand various terrains and weather conditions",
+      "High-quality materials, including synthetic leather and mesh for breathability",
+      "Reinforced toe cap and heel for added protection and durability",
+      "Cushioned insole for enhanced comfort during long hikes",
+      "Supportive midsole for stability and shock absorption",
+      "Traction outsole with multidirectional lugs for excellent grip on different surfaces"
+    ],
+    "description": "Durable and waterproof construction to withstand various terrains and weather conditions",
+    "source": "product_info_11.pdf"
+  },
+  {
+    "id": 12,
+    "name": "TrekMaster Camping Chair",
+    "price": 50.0,
+    "brand": "CampBuddy",
+    "category": "Camping Tables",
+    "group": "Camp furniture",
+    "kind": "chair",
+    "features": [
+      "Sturdy Construction: Built with high-quality materials for durability and long-lasting performance.",
+      "Lightweight and Portable: Designed to be lightweight and easy to carry, making it convenient for camping, hiking, and outdoor activities.",
+      "Foldable Design: Allows for compact storage and effortless transportation.",
+      "Comfortable Seating: Provides ergonomic support and comfortable seating experience with padded seat and backrest.",
+      "Adjustable Recline: Offers multiple reclining positions for personalized comfort.",
+      "Cup Holder: Integrated cup holder for keeping beverages within reach."
+    ],
+    "description": "Sturdy Construction: Built with high-quality materials for durability and long-lasting performance.",
+    "source": "product_info_12.pdf"
+  },
+  {
+    "id": 13,
+    "name": "PowerBurner Camping Stove",
+    "price": 100.0,
+    "brand": "PowerBurner",
+    "category": "Camping Stoves",
+    "group": "Camp kitchen",
+    "kind": "stove",
+    "features": [
+      "Dual burners for efficient cooking",
+      "High heat output for fast boiling and cooking times",
+      "Adjustable flame control for precise temperature regulation",
+      "Compact and portable design for easy transportation",
+      "Piezo ignition system for quick and reliable ignition",
+      "Wind-resistant design to withstand outdoor conditions"
+    ],
+    "description": "Dual burners for efficient cooking",
+    "source": "product_info_13.pdf"
+  },
+  {
+    "id": 14,
+    "name": "MountainDream Sleeping Bag",
+    "price": 130.0,
+    "brand": "MountainDream",
+    "category": "Sleeping Bags",
+    "group": "Sleep & comfort",
+    "kind": "sleeping",
+    "features": [
+      "Temperature Rating: Suitable for 3-season camping (rated for temperatures between 15°F to 30°F)",
+      "Insulation: Premium synthetic insulation for warmth and comfort",
+      "Shell Material: Durable and water-resistant ripstop nylon",
+      "Lining Material: Soft and breathable polyester fabric",
+      "Zipper: Smooth and snag-free YKK zipper with anti-snag design",
+      "Hood Design: Adjustable hood with drawcord for customized fit and added warmth"
+    ],
+    "description": "Temperature Rating: Suitable for 3-season camping (rated for temperatures between 15°F to 30°F)",
+    "source": "product_info_14.pdf"
+  },
+  {
+    "id": 15,
+    "name": "SkyView 2-Person Tent",
+    "price": 200.0,
+    "brand": "OutdoorLiving",
+    "category": "Tents",
+    "group": "Tents",
+    "kind": "tent",
+    "features": [
+      "Spacious interior comfortably accommodates two people",
+      "Durable and waterproof materials for reliable protection against the elements",
+      "Easy and quick setup with color-coded poles and intuitive design",
+      "Two large doors for convenient entry and exit",
+      "Vestibules provide extra storage space for gear",
+      "Mesh panels for enhanced ventilation and reduced condensation"
+    ],
+    "description": "Spacious interior comfortably accommodates two people",
+    "source": "product_info_15.pdf"
+  },
+  {
+    "id": 16,
+    "name": "TrailLite Daypack",
+    "price": 60.0,
+    "brand": "HikeMate",
+    "category": "Backpacks",
+    "group": "Backpacks",
+    "kind": "pack",
+    "features": [
+      "Lightweight and durable construction for comfortable all-day use",
+      "Spacious main compartment with ample storage capacity",
+      "Multiple pockets and compartments for organized storage of essentials",
+      "Adjustable shoulder straps and padded back panel for optimal comfort",
+      "Breathable mesh panels for enhanced airflow and ventilation",
+      "External attachment points for securing additional gear"
+    ],
+    "description": "Lightweight and durable construction for comfortable all-day use",
+    "source": "product_info_16.pdf"
+  },
+  {
+    "id": 17,
+    "name": "RainGuard Hiking Jacket",
+    "price": 110.0,
+    "brand": "MountainStyle",
+    "category": "Hiking Clothing",
+    "group": "Clothing",
+    "kind": "jacket",
+    "features": [
+      "Waterproof and Breathable: The RainGuard Hiking Jacket is designed to keep you dry and comfortable in wet conditions, thanks to its waterproof and breathable fabric.",
+      "Durable Construction: Made with high-quality materials, this jacket is built to withstand rugged outdoor activities and provide long-lasting performance.",
+      "Adjustable Hood: The hood of the jacket is adjustable, allowing you to customize the fit and provide additional protection against rain and wind.",
+      "Multiple Pockets: The jacket features multiple pockets, including zippered hand pockets and a chest pocket, providing convenient storage for your essentials.",
+      "Adjustable Cuffs and Hem: The cuffs and hem of the jacket are adjustable, allowing you to seal out the elements and tailor the fit to your preference.",
+      "Ventilation Zippers: To prevent overheating during intense activities, the jacket is equipped with ventilation zippers that allow for increased airflow."
+    ],
+    "description": "Waterproof and Breathable: The RainGuard Hiking Jacket is designed to keep you dry and comfortable in wet conditions, thanks to its waterproof and breathable fabric.",
+    "source": "product_info_17.pdf"
+  },
+  {
+    "id": 18,
+    "name": "TrekStar Hiking Sandals",
+    "price": 70.0,
+    "brand": "TrekReady",
+    "category": "Hiking Footwear",
+    "group": "Footwear",
+    "kind": "sandals",
+    "features": [
+      "Durable and lightweight construction for comfortable hiking",
+      "Breathable and quick-drying materials to keep your feet cool and dry",
+      "Adjustable straps for a customizable and secure fit",
+      "Cushioned footbed for enhanced comfort and support",
+      "Rubber outsole with deep treads for excellent traction on various terrains",
+      "Toe protection to shield against rocks and debris"
+    ],
+    "description": "Durable and lightweight construction for comfortable hiking",
+    "source": "product_info_18.pdf"
+  },
+  {
+    "id": 19,
+    "name": "Adventure Dining Table",
+    "price": 90.0,
+    "brand": "CampBuddy",
+    "category": "Camping Tables",
+    "group": "Camp furniture",
+    "kind": "table",
+    "features": [
+      "Durable Construction: Made from high-quality materials to ensure long-lasting performance in outdoor environments.",
+      "Portable and Lightweight: Designed to be compact and lightweight for easy transportation and setup during outdoor adventures.",
+      "Adjustable Height: Offers adjustable height settings to accommodate various seating arrangements and preferences.",
+      "Spacious Surface: Provides ample surface area to comfortably accommodate meals, drinks, and other essentials.",
+      "Easy Setup: Quick and hassle-free setup with user-friendly mechanisms and instructions.",
+      "Weather Resistant: Designed to withstand outdoor conditions, including sun, rain, and moisture."
+    ],
+    "description": "Durable Construction: Made from high-quality materials to ensure long-lasting performance in outdoor environments.",
+    "source": "product_info_19.pdf"
+  },
+  {
+    "id": 20,
+    "name": "CompactCook Camping Stove",
+    "price": 60.0,
+    "brand": "CompactCook",
+    "category": "Camping Stoves",
+    "group": "Camp kitchen",
+    "kind": "stove",
+    "features": [
+      "Lightweight and Compact Design: The CompactCook Camping Stove is designed to be lightweight and compact, making it easy to carry and transport during outdoor adventures.",
+      "Efficient Cooking Performance: This camping stove delivers efficient cooking performance, allowing you to prepare meals quickly and easily.",
+      "Adjustable Flame Control: The stove features an adjustable flame control mechanism, giving you the flexibility to adjust the heat intensity according to your cooking needs.",
+      "Sturdy Construction: Made with durable materials, the CompactCook Camping Stove offers reliable performance and long-lasting durability, ensuring it can withstand rugged outdoor conditions.",
+      "Wind-Resistant Design: The stove is designed with wind-resistant features, allowing it to maintain a steady flame even in windy conditions, ensuring efficient cooking.",
+      "Easy Ignition: The stove features an easy ignition system, eliminating the need for matches or lighters. Simply press a button or turn a knob to ignite the flame."
+    ],
+    "description": "Lightweight and Compact Design: The CompactCook Camping Stove is designed to be lightweight and compact, making it easy to carry and transport during outdoor adventures.",
+    "source": "product_info_20.pdf"
+  }
+]

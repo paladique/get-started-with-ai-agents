@@ -30,6 +30,14 @@ resource apiIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-3
 
 var baseEnv = [
   {
+    name: 'PORT'
+    value: '80'
+  }
+  {
+    name: 'WEB_CONCURRENCY'
+    value: '1'
+  }
+  {
     name: 'AZURE_CLIENT_ID'
     value: apiIdentity.properties.clientId
   }
@@ -74,12 +82,16 @@ var baseEnv = [
     value: searchServiceEndpoint
   }
   {
+    name: 'AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING'
+    value: string(enableAzureMonitorTracing)
+  }
+  {
     name: 'ENABLE_AZURE_MONITOR_TRACING'
-    value: enableAzureMonitorTracing
+    value: string(enableAzureMonitorTracing)
   }
   {
     name: 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT'
-    value: otelInstrumentationGenAICaptureMessageContent
+    value: string(otelInstrumentationGenAICaptureMessageContent)
   }
   {
     name: 'AZURE_EXISTING_AIPROJECT_ENDPOINT'
@@ -128,7 +140,7 @@ module app 'core/host/container-app-upsert.bicep' = {
     identityName: apiIdentity.name
     containerRegistryName: containerRegistryName
     containerAppsEnvironmentName: containerAppsEnvironmentName
-    targetPort: 50505
+    targetPort: 80
     env: env
   }
 }
