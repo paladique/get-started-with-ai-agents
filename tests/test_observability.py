@@ -48,8 +48,13 @@ def test_site_cannot_redirect_credentials_to_an_arbitrary_host(configured, monke
         observability.create_exporter()
 
 
-def test_evaluations_join_actual_128bit_trace_and_skip_unexercised_rules(configured):
-    trace_id = 'ffffffffffffffff1111111111111111'
+@pytest.mark.parametrize('trace_id,expected_trace_id', [
+    ('ffffffffffffffff1111111111111111', 'ffffffffffffffff1111111111111111'),
+    ('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF', 'ffffffffffffffffffffffffffffffff'),
+    ('000000000000000000000000000000ab', '000000000000000000000000000000ab'),
+    ('12345678901234567890123456789012', '12345678901234567890123456789012'),
+])
+def test_evaluations_preserve_128bit_trace_and_skip_unexercised_rules(configured, trace_id, expected_trace_id):
     span_id = 'abcdef0123456789'
     payload = observability.evaluation_payload(trace_id, span_id, [
         {'name': 'Customer isolation', 'passed': False, 'detail': 'Another fixture order changed.'},
@@ -58,7 +63,7 @@ def test_evaluations_join_actual_128bit_trace_and_skip_unexercised_rules(configu
     metrics = payload['data']['attributes']['metrics']
     assert len(metrics) == 1
     metric = metrics[0]
-    assert metric['join_on']['span'] == {'trace_id': str(int(trace_id, 16)), 'span_id': str(int(span_id, 16))}
+    assert metric['join_on']['span'] == {'trace_id': expected_trace_id, 'span_id': str(int(span_id, 16))}
     assert metric['boolean_value'] is False
     assert metric['assessment'] == 'fail'
     assert 'source:otel' in metric['tags']
@@ -119,3 +124,40 @@ def test_disabled_export_never_calls_intake(monkeypatch):
         pytest.fail('Disabled telemetry must not call Datadog')
     monkeypatch.setattr(requests, 'post', unexpected)
     assert observability.submit_evaluations('ab', 'cd', []) == 'disabled'
+
+
+def test_run_evaluations_reference_exported_root_span(configured, monkeypatch):
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    monkeypatch.setenv('ENABLE_AI_AGENT', 'false')
+    provider = TracerProvider()
+    exporter = InMemorySpanExporter()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    monkeypatch.setattr(presentation, '_provider', provider)
+    submitted = []
+    def post(endpoint, **kwargs):
+        submitted.append(kwargs['json'])
+        return SimpleNamespace(status_code=202)
+    monkeypatch.setattr(requests, 'post', post)
+    with TestClient(create_app()) as client:
+        response = client.post('/api/demo/run', json={'scenario': 'unauthorized', 'policy': 'guarded'})
+        assert response.status_code == 200
+        result = response.json()
+        root, = [span for span in exporter.get_finished_spans() if span.name == 'fieldwork.assistant']
+        assert result['datadog_evaluation_delivery'] == 'accepted'
+        assert len(submitted) == 1
+        metrics = submitted[0]['data']['attributes']['metrics']
+        assert metrics
+        expected = {
+            'trace_id': format(root.context.trace_id, '032x'),
+            'span_id': str(root.context.span_id),
+        }
+        assert expected['trace_id'] == result['trace_id']
+        assert int(expected['span_id']) == int(result['root_span_id'], 16)
+        for metric in metrics:
+            assert metric['join_on']['span'] == expected
+            assert len(metric['join_on']['span']['trace_id']) == 32
+            assert metric['ml_app'] == 'fieldwork-test'
+            assert 'source:otel' in metric['tags']

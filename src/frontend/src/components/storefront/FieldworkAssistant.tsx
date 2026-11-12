@@ -8,14 +8,14 @@ export default function FieldworkAssistant({ open, onClose, runs, onRun, convers
  const conversation = useRef<HTMLDivElement>(null);
  const inFlight = useRef(false);
  const [config, setConfig] = useState<Config | null>(null);
- const [mode, setMode] = useState<Mode>('replay');
- const [policy, setPolicy] = useState<Policy>('guarded');
+ const [mode, setMode] = useState<Mode>('live');
+ const [policy, setPolicy] = useState<Policy>('baseline');
  const [busy, setBusy] = useState(false);
  const [error, setError] = useState('');
  const latest = runs.at(-1);
  useEffect(() => {
    if (!open) return;
-   setMode(latest?.mode ?? 'replay'); setPolicy(latest?.policy ?? 'guarded');
+   setMode(latest?.mode ?? 'live'); setPolicy(latest?.policy ?? 'baseline');
    const controller = new AbortController();
    fetch('/api/demo/config', { signal: controller.signal }).then(async response => {
      if (!response.ok) throw new Error('Could not load the assistant. Close and reopen to retry.');

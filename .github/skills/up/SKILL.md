@@ -210,7 +210,7 @@ Show the resolved region to the user for confirmation before proceeding.
 
 Before provisioning, verify the default agent model has sufficient quota in the selected region.
 
-**Default model:** `gpt-5-mini` | **SKU:** `GlobalStandard` | **Required capacity:** 80
+**Default model:** `gpt-6.1-terra` | **SKU:** `GlobalStandard` | **Required capacity:** 80
 
 #### 5a. Query quota and model availability
 
@@ -224,7 +224,7 @@ Cache both `$usage` and `$modelList` — they are reused in Step 7 for embedding
 #### 5b. Check default agent model quota
 
 ```powershell
-$defaultUsageName = "OpenAI.GlobalStandard.gpt-5-mini"
+$defaultUsageName = "OpenAI.GlobalStandard.gpt-6.1-terra"
 $entry = $usage | Where-Object { $_.name.value -eq $defaultUsageName }
 ```
 
@@ -234,7 +234,7 @@ If the entry exists, compute `available = limit - currentValue`.
 - If the entry is **missing**, the model/SKU is not available in this region — continue to 5c.
 - If `available < 80`, quota is insufficient — continue to 5c.
 
-Report the finding to the user (e.g., "gpt-5-mini has 40/80 quota available — insufficient").
+Report the finding to the user (e.g., "gpt-6.1-terra has 40/80 quota available — insufficient").
 
 #### 5c. Find alternative agent models
 
@@ -256,16 +256,8 @@ confirmed by the model list.
 
 Use this preference order (higher is better):
 
-1. `gpt-5.2`
-2. `gpt-5.2-mini`
-3. `gpt-5.1`
-4. `gpt-5.1-mini`
-5. `gpt-5`
-6. `gpt-5-mini`
-7. `gpt-4.1`
-8. `gpt-4.1-mini`
-9. `gpt-4o`
-10. `gpt-4o-mini`
+
+1. `gpt-6.1-terra`
 
 Within the same model name, prefer `GlobalStandard` over `Global`.
 

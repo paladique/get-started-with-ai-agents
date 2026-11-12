@@ -86,13 +86,17 @@ def create_exporter():
 
 def evaluation_payload(trace_id, span_id, checks, tags=None):
     config = settings()
+    # The HTTP API accepts 128-bit trace IDs as 32 lowercase hex characters.
+    # Preserve the full OTLP trace ID (including leading zeros); span IDs are decimal.
+    # https://docs.datadoghq.com/llm_observability/instrument/api/#spancontext
+    span_context = {"trace_id": format(int(trace_id, 16), "032x"), "span_id": str(int(span_id, 16))}
     metrics = []
     for check in checks:
         if check["passed"] is None:
             continue
         metrics.append({
             "id": str(uuid4()), "eval_scope": "span",
-            "join_on": {"span": {"trace_id": str(int(trace_id, 16)), "span_id": str(int(span_id, 16))}},
+            "join_on": {"span": span_context},
             "ml_app": config["app"], "timestamp_ms": int(time.time() * 1000),
             "metric_type": "boolean", "label": check["name"].lower().replace(" ", "_"),
             "boolean_value": bool(check["passed"]), "assessment": "pass" if check["passed"] else "fail",

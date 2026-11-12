@@ -132,3 +132,41 @@ def test_production_initialization_does_not_write_env(tmp_path, monkeypatch):
     monkeypatch.setenv("RUNNING_IN_PRODUCTION", "true")
     util.save_local_agent_id(str(env_file), "demo-assistant:2")
     assert env_file.read_text() == "AZURE_EXISTING_AGENT_ID=old-agent:1\n"
+
+
+def test_local_app_target_overrides_stale_inherited_values(config_root, monkeypatch):
+    from fastapi.testclient import TestClient
+    from api.main import create_app
+    endpoint = 'https://current.services.ai.azure.com/api/projects/current'
+    (config_root / '.env').write_text(
+        'AZURE_AI_AGENT_DEPLOYMENT_NAME=gpt-6.1-terra\n'
+        f'AZURE_EXISTING_AIPROJECT_ENDPOINT={endpoint}\n'
+        'DEMO_TEST_SETTING=from-file\n'
+    )
+    monkeypatch.setenv('AZURE_AI_AGENT_DEPLOYMENT_NAME', 'gpt-6.1-terra-1')
+    monkeypatch.setenv('AZURE_EXISTING_AIPROJECT_ENDPOINT', 'https://old.services.ai.azure.com/api/projects/old')
+    monkeypatch.setenv('DEMO_TEST_SETTING', 'from-process')
+    monkeypatch.setenv('ENABLE_AI_AGENT', 'false')
+    with TestClient(create_app()) as client:
+        config = client.get('/api/demo/config').json()
+        assert config['live_deployment'] == 'gpt-6.1-terra'
+        assert config['live_configured'] is True
+        assert os.environ['AZURE_EXISTING_AIPROJECT_ENDPOINT'] == endpoint
+        assert os.environ['DEMO_TEST_SETTING'] == 'from-process'
+
+
+def test_production_keeps_process_model_target(config_root, monkeypatch):
+    (config_root / '.env').write_text('AZURE_AI_AGENT_DEPLOYMENT_NAME=local-model\n')
+    monkeypatch.setenv('RUNNING_IN_PRODUCTION', 'true')
+    monkeypatch.setenv('AZURE_AI_AGENT_DEPLOYMENT_NAME', 'deployed-model')
+    monkeypatch.setenv('AZURE_EXISTING_AIPROJECT_ENDPOINT', 'https://production.services.ai.azure.com/api/projects/prod')
+    assert util.load_app_environment() is None
+    assert os.environ['AZURE_AI_AGENT_DEPLOYMENT_NAME'] == 'deployed-model'
+    assert os.environ['AZURE_EXISTING_AIPROJECT_ENDPOINT'] == 'https://production.services.ai.azure.com/api/projects/prod'
+
+
+def test_empty_local_target_does_not_reuse_stale_deployment(config_root, monkeypatch):
+    (config_root / '.env').write_text('AZURE_AI_AGENT_DEPLOYMENT_NAME=\n')
+    monkeypatch.setenv('AZURE_AI_AGENT_DEPLOYMENT_NAME', 'stale-model')
+    util.load_app_environment()
+    assert os.environ['AZURE_AI_AGENT_DEPLOYMENT_NAME'] == ''

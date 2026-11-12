@@ -22,6 +22,8 @@ Catalog: `src/api/data/catalog.json`. The product illustrations are original SVG
 
 ### A reliable rehearsal sequence
 
+The assistant and studio default to **Live Foundry** and **Baseline** for a new conversation. Live mode requires the server configuration below. Select **Local replay** for a scripted rehearsal without model calls. Reopening either surface keeps the latest run’s mode and policy.
+
 1. In Fieldwork, click **Try the shopping assistant** or **Alex · Demo shopper**. Alex is the signed-in synthetic customer. Use the suggested requests to ask about the tent and update Alex's delivery address. The order card shows the result from the latest request.
 2. Expand **Demo settings**, choose **Baseline**, and click **Help with a friend’s order**. FW-1002 belongs to Jamie, but the broad fixture tool changes its address. The assistant confirms the update without an outcome warning. Only the demo studio reveals the failed customer-isolation check.
 3. Click **Inspect this run in demo studio**. The studio opens with the same conversation, selected result, trace ID, execution mode, and policy. **Trace** shows the actual tool call; **Evaluate** explains the failed business outcome. Jamie’s before/after address is visible in the studio's synthetic order evidence.
@@ -34,6 +36,8 @@ Local replay uses scripted answers and zero model calls. Its OpenTelemetry spans
 
 ### Optional live Foundry mode
 
+Local runs load the model deployment name and project endpoint from the selected `.env` file (root `.env` first, then the default azd environment), overriding inherited values for those two settings. This prevents stale shell exports from surviving Uvicorn reloads. Production uses its deployed environment settings. Check the startup log’s **Live demo deployment** value or `live_deployment` in `/api/demo/config`.
+
 In the root `.env`, set:
 
 ```dotenv
@@ -45,6 +49,19 @@ AZURE_AI_AGENT_DEPLOYMENT_NAME=<your deployed model name>
 Sign in with `az login`, restart Uvicorn, and select **Live · Azure Foundry**. This mode uses the existing deployed model through `AIProjectClient.get_openai_client()` and the Responses API with explicit local function tools. It does not create an agent version, modify an existing Foundry agent, require `AZURE_EXISTING_AGENT_ID`, or enable the legacy chat startup. Keep `ENABLE_AI_AGENT=false` unless you separately want those legacy APIs.
 
 Live runs consume inference tokens. Each request permits at most four model calls with 2,200 output tokens per call and a 90-second application timeout. The UI displays actual returned token usage; a failed live request is surfaced as an error, never silently replaced by a replay. Live answers may vary, and a baseline model may refuse an unsafe action on its own; use replay when you need a guaranteed on-stage reproduction.
+
+### Azure model request returns 404
+
+A model deployment name must exist under the account used by `AZURE_EXISTING_AIPROJECT_ENDPOINT`. Check `/api/demo/config`: `live_deployment` shows the running server's effective model deployment. The server logs **Live Foundry target** with the deployment and project endpoint before inference, and identifies the requested deployment on a 404. The endpoint remains in server logs. These values can differ from an edited `.env` until the server is fully restarted.
+
+After changing or recreating a deployment, stop Uvicorn completely. Clear stale shell exports, then start it again from `src`:
+
+```sh
+unset AZURE_AI_AGENT_DEPLOYMENT_NAME AZURE_EXISTING_AIPROJECT_ENDPOINT
+python -m uvicorn "api.main:create_app" --factory --reload
+```
+
+This reloads both values from the root `.env`; keep its endpoint pointed at the account/project where the model was deployed. A newly recreated Azure deployment may need a few minutes before inference is available. For an Azure Container App, local `.env` edits do not change its deployed environment variables; update the app's model setting separately.
 
 ### Send traces to your observability platform
 

@@ -65,13 +65,13 @@ azd env set AZURE_AI_AGENT_MODEL_FORMAT Microsoft
 Change the agent model name:
 
 ```shell
-azd env set AZURE_AI_AGENT_MODEL_NAME gpt-5-mini
+azd env set AZURE_AI_AGENT_MODEL_NAME gpt-6.1-terra
 ```
 
 Set the version of the agent model:
 
 ```shell
-azd env set AZURE_AI_AGENT_MODEL_VERSION 2025-08-07
+azd env set AZURE_AI_AGENT_MODEL_VERSION 2026-10-26
 ```
 
 ### Setting models, capacity, and deployment SKU

@@ -131,6 +131,7 @@ def test_live_function_call_loop_reports_actual_usage(monkeypatch):
     tool_messages = json.loads(model_spans[1].attributes["gen_ai.input.messages"])
     assert any(message["role"] == "tool" for message in tool_messages)
     assert all(span.attributes["gen_ai.conversation.id"] == result["session_id"] for span in exporter.get_finished_spans())
+    assert_evaluation_instrumentation(exporter.get_finished_spans(), result)
     provider.shutdown()
 
 
@@ -156,6 +157,7 @@ def test_semantic_failure_has_successful_technical_spans_and_genai_metadata(monk
     assert json.loads(tool.attributes["gen_ai.tool.call.result"])["updated"] is True
     assert format(root.context.trace_id, "032x") == result["trace_id"]
     assert tool.context.trace_id == root.context.trace_id
+    assert_evaluation_instrumentation(spans, result)
     provider.shutdown()
 
 
@@ -172,3 +174,53 @@ def test_trace_message_normalization_keeps_tool_evidence_and_omits_reasoning():
     assert data[1]["parts"][0]["name"] == "lookup_product"
     assert data[2]["parts"][0]["response"] == '{"price":350}'
     assert data[3]["parts"][0]["content"] == "It costs $350."
+
+
+def assert_evaluation_instrumentation(spans, result):
+    """Check the attributes Datadog needs on actual finished replay/live spans."""
+    valid_operations = {'chat', 'text_completion', 'embeddings', 'execute_tool', 'invoke_agent', 'retrieval'}
+    for span in spans:
+        assert span.attributes['gen_ai.operation.name'] in valid_operations
+        assert span.attributes['gen_ai.provider.name']
+    evaluation, = [span for span in spans if span.name == 'evaluate.outcome']
+    attrs = evaluation.attributes
+    assert attrs['gen_ai.operation.name'] == 'execute_tool'
+    assert attrs['gen_ai.provider.name'] == 'fieldwork'
+    assert attrs['gen_ai.tool.name'] == 'evaluate.outcome'
+    assert json.loads(attrs['gen_ai.tool.call.arguments']) == {'answer': result['answer']}
+    assert json.loads(attrs['gen_ai.tool.call.result']) == result['checks']
+    assert 'gen_ai.request.model' not in attrs
+    assert 'gen_ai.usage.input_tokens' not in attrs
+    assert 'gen_ai.usage.output_tokens' not in attrs
+    input_message, = json.loads(attrs['gen_ai.input.messages'])
+    output_message, = json.loads(attrs['gen_ai.output.messages'])
+    assert json.loads(input_message['content']) == {'answer': result['answer']}
+    assert json.loads(output_message['content']) == result['checks']
+    assert evaluation.status.is_ok
+
+
+def test_config_reports_effective_deployment_without_project_endpoint(client, monkeypatch):
+    monkeypatch.setenv('AZURE_AI_AGENT_DEPLOYMENT_NAME', 'runtime-deployment')
+    monkeypatch.setenv('AZURE_EXISTING_AIPROJECT_ENDPOINT', 'https://runtime.services.ai.azure.com/api/projects/runtime')
+    config = client.get('/api/demo/config').json()
+    assert config['live_deployment'] == 'runtime-deployment'
+    assert config['live_configured'] is True
+    assert 'https://runtime.services.ai.azure.com' not in json.dumps(config)
+
+
+def test_missing_deployment_error_identifies_runtime_target(client, monkeypatch, caplog):
+    import httpx
+    from openai import NotFoundError
+    async def missing_deployment(run):
+        run.model = 'stale-deployment'
+        response = httpx.Response(404, request=httpx.Request('POST', 'https://example.services.ai.azure.com/openai/v1/responses'))
+        raise NotFoundError('The API deployment for this resource does not exist.', response=response, body={'error': {'code': 'DeploymentNotFound'}})
+    monkeypatch.setattr(presentation.Run, 'live', missing_deployment)
+    response = client.post('/api/demo/run', json={'scenario': 'product', 'mode': 'live'})
+    assert response.status_code == 502
+    detail = response.json()['detail']
+    assert '404' in detail and 'stale-deployment' in detail
+    assert 'restart the server' in detail
+    assert 'Replay mode remains available' in detail
+    assert 'deployment=stale-deployment' in caplog.text
+    assert 'trace_id=' in caplog.text

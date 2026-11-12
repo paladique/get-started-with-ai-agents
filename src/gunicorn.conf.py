@@ -25,13 +25,11 @@ from azure.ai.projects.models import (
 
 
 from openai import AsyncOpenAI
-from dotenv import load_dotenv
 from logging_config import configure_logging
-from util import get_env_file_path, retry_azure_startup, save_local_agent_id
+from util import load_app_environment, retry_azure_startup, save_local_agent_id
 
-# Load environment variables from azd environment folder for local development
-env_file = get_env_file_path()
-load_dotenv(env_file)
+# Use the same configuration precedence as Uvicorn.
+env_file = load_app_environment()
 
 logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
 if env_file:

@@ -7,7 +7,7 @@ param environmentName string
 
 @description('Location for all resources. The default builtin.violence continuous evaluator is supported only in East US 2, North Central US, France Central, Sweden Central, Switzerland West, Germany West Central, and Australia East. Evaluation runs fail in other regions.')
 // Based on the model, creating an agent is not supported in all regions. 
-// The combination of allowed and usageName below is for AZD to check AI model gpt-5-mini quota only for the allowed regions for creating an agent.
+// The combination of allowed and usageName below is for AZD to check AI model gpt-6.1-terra quota only for the allowed regions for creating an agent.
 // If using different models, update the SKU,capacity depending on the model you use.
 // https://learn.microsoft.com/azure/ai-services/agents/concepts/model-region-support
 @allowed([
@@ -20,9 +20,9 @@ param environmentName string
 @metadata({
   azd: {
     type: 'location'
-    // quota-validation for ai models: gpt-5-mini
+    // quota-validation for ai models: gpt-6.1-terra
     usageName: [
-      'OpenAI.GlobalStandard.gpt-5-mini,80'
+      'OpenAI.GlobalStandard.gpt-6.1-terra,80'
     ]
   }
 })
@@ -72,14 +72,14 @@ param aiAgentID string = ''
 @description('ID of the existing agent')
 param azureExistingAgentId string = ''
 @description('Name of the chat model to deploy')
-param agentModelName string = 'gpt-5-mini'
+param agentModelName string = 'gpt-6.1-terra'
 @description('Name of the model deployment')
-param agentDeploymentName string = 'gpt-5-mini'
+param agentDeploymentName string = 'gpt-6.1-terra'
 
 @description('Version of the chat model to deploy')
 // See version availability in this table:
 // https://learn.microsoft.com/azure/ai-services/openai/concepts/models#global-standard-model-availability
-param agentModelVersion string = '2025-08-07'
+param agentModelVersion string = '2026-10-26'
 
 @description('Sku of the chat deployment')
 param agentDeploymentSku string = 'GlobalStandard'

@@ -89,7 +89,7 @@ Queried quota usage and model list for `swedencentral`.
 ### 5a–5b. Default agent model
 
 ```
-Default model: gpt-5-mini (GlobalStandard)
+Default model: gpt-6.1-terra (GlobalStandard)
 Required capacity: 80
 Available capacity: 9,470
 ```

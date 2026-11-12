@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.49.2.45890",
-      "templateHash": "7750641684714658019"
+      "templateHash": "17276569037561822648"
     }
   },
   "parameters": {
@@ -30,7 +30,7 @@
         "azd": {
           "type": "location",
           "usageName": [
-            "OpenAI.GlobalStandard.gpt-5-mini,80"
+            "OpenAI.GlobalStandard.gpt-6.1-terra,80"
           ]
         },
         "description": "Location for all resources. The default builtin.violence continuous evaluator is supported only in East US 2, North Central US, France Central, Sweden Central, Switzerland West, Germany West Central, and Australia East. Evaluation runs fail in other regions."
@@ -182,21 +182,21 @@
     },
     "agentModelName": {
       "type": "string",
-      "defaultValue": "gpt-5-mini",
+      "defaultValue": "gpt-6.1-terra",
       "metadata": {
         "description": "Name of the chat model to deploy"
       }
     },
     "agentDeploymentName": {
       "type": "string",
-      "defaultValue": "gpt-5-mini",
+      "defaultValue": "gpt-6.1-terra",
       "metadata": {
         "description": "Name of the model deployment"
       }
     },
     "agentModelVersion": {
       "type": "string",
-      "defaultValue": "2025-08-07",
+      "defaultValue": "2026-10-26",
       "metadata": {
         "description": "Version of the chat model to deploy"
       }

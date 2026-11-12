@@ -15,6 +15,7 @@ from typing import Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
+from openai import NotFoundError
 from pydantic import BaseModel, ConfigDict, Field
 from . import observability
 from opentelemetry.sdk.resources import Resource
@@ -71,6 +72,7 @@ def configuration():
         "customer": CUSTOMER, "orders": ORDERS, "scenarios": SCENARIOS,
         "live_enabled": os.getenv("ENABLE_LIVE_DEMO", "false").lower() == "true",
         "live_configured": bool(os.getenv("AZURE_EXISTING_AIPROJECT_ENDPOINT") and os.getenv("AZURE_AI_AGENT_DEPLOYMENT_NAME")),
+        "live_deployment": os.getenv("AZURE_AI_AGENT_DEPLOYMENT_NAME"),
         "trace_export_enabled": observability.public_status()["configured"] or os.getenv("DEMO_EXPORT_TRACES", "false").lower() == "true",
         "datadog": observability.public_status(),
         "fixture_notice": "Synthetic orders reset for every run. No real account, order, or cart is modified.",
@@ -124,10 +126,16 @@ class Run:
             span.set_attribute("demo.synthetic", True)
             span.set_attribute("customer.id", CUSTOMER["id"])
             span.set_attribute("gen_ai.conversation.id", self.session_id)
-            if kind == "tool":
+            if kind in ("tool", "evaluation"):
+                # Fixture tools and rule evaluation execute in this application.
                 span.set_attribute("gen_ai.operation.name", "execute_tool")
+                span.set_attribute("gen_ai.provider.name", "fieldwork")
                 span.set_attribute("gen_ai.tool.name", name)
                 span.set_attribute("gen_ai.tool.call.arguments", json.dumps(arguments or {}))
+            elif kind == "replay":
+                span.set_attribute("gen_ai.operation.name", "invoke_agent")
+                span.set_attribute("gen_ai.provider.name", "fieldwork")
+                span.set_attribute("gen_ai.agent.name", name)
             record = {"name": name, "kind": kind, "input": arguments or {}, "output": None, "status": "ok", "span_id": format(span.get_span_context().span_id, "016x")}
             self.steps.append(record)
             try:
@@ -137,6 +145,8 @@ class Run:
                 raise
             finally:
                 if record["output"] is not None and kind != "model":
+                    if kind in ("tool", "evaluation"):
+                        span.set_attribute("gen_ai.tool.call.result", json.dumps(record["output"]))
                     span.set_attribute("gen_ai.input.messages", json.dumps([{"role": "user", "content": json.dumps(record["input"])}]))
                     span.set_attribute("gen_ai.output.messages", json.dumps([{"role": "assistant", "content": json.dumps(record["output"])}]))
                 record["duration_ms"] = round((perf_counter() - started) * 1000, 2)
@@ -172,7 +182,6 @@ class Run:
                 result = {"error": "unknown_tool"}
                 record["status"] = "error"
             record["output"] = result
-            span.set_attribute("gen_ai.tool.call.result", json.dumps(result))
             return result
 
     def replay(self):
@@ -203,6 +212,8 @@ class Run:
         if not config["live_configured"]:
             raise HTTPException(409, "Set AZURE_EXISTING_AIPROJECT_ENDPOINT and AZURE_AI_AGENT_DEPLOYMENT_NAME for live mode.")
         self.model = os.environ["AZURE_AI_AGENT_DEPLOYMENT_NAME"]
+        # Keep the project endpoint in server logs only.
+        logger.info("Live Foundry target: deployment=%s project_endpoint=%s session_id=%s", self.model, os.environ["AZURE_EXISTING_AIPROJECT_ENDPOINT"], self.session_id)
         tools = [
             {"type": "function", "name": "lookup_product", "description": "Look up catalog product details. Alpine Explorer Tent has product_id 8.", "strict": True, "parameters": {"type": "object", "properties": {"product_id": {"type": "integer"}}, "required": ["product_id"], "additionalProperties": False}},
             {"type": "function", "name": "update_order_address", "description": "Update a synthetic demo order's delivery address. The service enforces its configured authorization policy.", "strict": True, "parameters": {"type": "object", "properties": {"order_id": {"type": "string"}, "address": {"type": "string"}}, "required": ["order_id", "address"], "additionalProperties": False}},
@@ -297,6 +308,7 @@ async def run_demo(request: DemoRequest):
             root.set_attribute("demo.scenario", request.scenario)
             root.set_attribute("demo.synthetic", True)
             root.set_attribute("gen_ai.operation.name", "invoke_agent")
+            root.set_attribute("gen_ai.provider.name", "fieldwork")
             root.set_attribute("gen_ai.agent.name", "fieldwork-shopping-assistant")
             root.set_attribute("gen_ai.conversation.id", run.session_id)
             root.set_attribute("demo.agent_version", request.policy)
@@ -305,7 +317,7 @@ async def run_demo(request: DemoRequest):
             trace_id = format(root.get_span_context().trace_id, "032x")
             root_span_id = format(root.get_span_context().span_id, "016x")
             answer = run.replay() if request.mode == "replay" else await asyncio.wait_for(run.live(), timeout=90)
-            with run.step("evaluate.outcome", "evaluation") as (record, _):
+            with run.step("evaluate.outcome", "evaluation", {"answer": answer}) as (record, _):
                 checks = run.evaluate(answer)
                 record["output"] = checks
             passed = all(check["passed"] is not False for check in checks)
@@ -323,6 +335,9 @@ async def run_demo(request: DemoRequest):
         return result
     except HTTPException:
         raise
+    except NotFoundError as error:
+        logger.exception("Foundry target not found: deployment=%s project_endpoint=%s trace_id=%s", run.model, os.getenv("AZURE_EXISTING_AIPROJECT_ENDPOINT"), locals().get("trace_id", "unavailable"))
+        raise HTTPException(502, f"Azure returned 404 for deployment '{run.model}' in the configured Foundry project. Verify the deployment and project endpoint; after recreating a deployment, allow a few minutes. Fully restart the server after changing .env; check live_deployment in /api/demo/config to confirm the loaded value. Replay mode remains available.") from error
     except Exception as error:
         logger.exception("Presentation run failed; trace_id=%s", locals().get("trace_id", "unavailable"))
         # Keep provider internals and credentials in server logs, not the shopper UI.

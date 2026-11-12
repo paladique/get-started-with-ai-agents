@@ -12,7 +12,7 @@ def get_env_file_path():
     """Resolve local config: root .env, then the default azd environment.
 
     Production uses process environment variables and dotenv's default lookup.
-    Explicit process variables always take precedence (load_dotenv's default).
+    load_app_environment handles precedence for local model target settings.
     """
     if os.getenv("RUNNING_IN_PRODUCTION"):
         return None
@@ -32,6 +32,25 @@ def get_env_file_path():
     except (OSError, ValueError, TypeError):
         pass
     return None
+
+
+def load_app_environment():
+    """Load config, using the local file as the model target's source of truth.
+
+    Uvicorn reload workers inherit their parent's environment. Override only the
+    model/project target locally so stale shell exports cannot redirect requests.
+    Production retains process-environment precedence.
+    """
+    from dotenv import dotenv_values, load_dotenv
+
+    env_file = get_env_file_path()
+    load_dotenv(env_file)
+    if env_file and not os.getenv("RUNNING_IN_PRODUCTION"):
+        values = dotenv_values(env_file)
+        for name in ("AZURE_AI_AGENT_DEPLOYMENT_NAME", "AZURE_EXISTING_AIPROJECT_ENDPOINT"):
+            if values.get(name) is not None:
+                os.environ[name] = values[name]
+    return env_file
 
 
 # Constants

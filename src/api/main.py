@@ -13,8 +13,7 @@ import fastapi
 from fastapi.staticfiles import StaticFiles
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
-from util import get_env_file_path
+from util import load_app_environment
 
 from logging_config import configure_logging
 
@@ -124,9 +123,8 @@ async def lifespan(app: fastapi.FastAPI):
 def create_app():
     
     global logger, env_file
-    # Load environment variables from azd environment folder for local development
-    env_file = get_env_file_path()
-    load_dotenv(env_file)
+    # Resolve local config consistently even when reload workers inherit old values.
+    env_file = load_app_environment()
     logger = configure_logging(os.getenv("APP_LOG_FILE", ""))
 
     if env_file:
@@ -134,6 +132,8 @@ def create_app():
     else:
         logger.info("Loaded environment variables from default location")    
     
+
+    logger.info("Live demo deployment: %s", os.getenv("AZURE_AI_AGENT_DEPLOYMENT_NAME", "<not configured>"))
 
     enable_trace_string = os.getenv("ENABLE_AZURE_MONITOR_TRACING", "")
     global enable_trace
